@@ -10,7 +10,8 @@ import {
   Mic,
   Copy,
   Check,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 import { useToast } from '../context/ToastContext';
@@ -21,16 +22,53 @@ export default function RepurposingTab() {
   const { data, setData } = useCreator();
   const { addToast } = useToast();
   const [copiedId, setCopiedId] = React.useState(null);
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [loadingStates, setLoadingStates] = React.useState({});
 
-  // Initialize repurposed data if it doesn't exist
-  React.useEffect(() => {
-    if (data && !data.repurposed) {
-      const generated = repurposeContent(data);
-      setData(prev => ({ ...prev, repurposed: generated }));
+  // No more automatic generation
+  
+  const handleAIGenerate = async () => {
+    if (!data?.script && !data?.rawText) {
+      addToast('error', 'No script available to repurpose.');
+      return;
     }
-  }, [data, setData]);
 
-  const content = data?.repurposed || repurposeContent(data);
+    setIsGenerating(true);
+    setLoadingStates({
+      shortFormClips: true,
+      linkedInPost: true,
+      twitterThread: true,
+      blogPost: true,
+      emailNewsletter: true,
+      instagramCaption: true
+    });
+
+    try {
+      const { repurposeContent } = await import('../engine/aiService');
+      
+      const onProgress = (key, result) => {
+        setLoadingStates(prev => ({ ...prev, [key]: false }));
+        if (result) { // incremental update
+          setData(prev => ({
+            ...prev,
+            repurposed: {
+              ...prev.repurposed,
+              [key]: result
+            }
+          }));
+        }
+      };
+
+      await repurposeContent(data, onProgress);
+      addToast('success', 'Content repurposed successfully!');
+    } catch (err) {
+      console.error(err);
+      addToast('error', 'Failed to repurpose content.');
+    } finally {
+      setIsGenerating(false);
+      setLoadingStates({});
+    }
+  };
 
   const updateContent = (section, updateFn) => {
     if (!data?.repurposed) return;
@@ -56,14 +94,53 @@ export default function RepurposingTab() {
       <div className="empty-state">
         <Video size={48} style={{ opacity: 0.3 }} />
         <h3>No Content Yet</h3>
-        <p>Generate content first to see multi-platform repurposing options</p>
+        <p>Generate a script first to unlock AI repurposing.</p>
       </div>
     );
   }
 
+  const content = data.repurposed || {};
+
+  const handleSingleRegenerate = async (platformId) => {
+    if (!data?.script && !data?.rawText) return;
+    
+    setLoadingStates(prev => ({ ...prev, [platformId]: true }));
+    try {
+      const { generateContent } = await import('../engine/aiService');
+      const { REPURPOSING_PROMPTS } = await import('../engine/repurposingPrompts');
+      
+      const promptKey = platforms.find(p => p.id === platformId)?.promptKey;
+      if (!promptKey) return;
+
+      const fullScript = data.script?.scenes 
+        ? data.script.scenes.map(s => s.description).join('\n\n') 
+        : data.rawText || '';
+
+      const userPrompt = `TOPIC: ${data.topic}\nSCRIPT:\n${fullScript}`;
+      
+      const result = await generateContent(REPURPOSING_PROMPTS[promptKey], userPrompt);
+      
+      setData(prev => ({
+        ...prev,
+        repurposed: {
+          ...prev.repurposed,
+          [platforms.find(p => p.id === platformId).dataKey]: result
+        }
+      }));
+      addToast('success', 'Regenerated!');
+    } catch (err) {
+      console.error(err);
+      addToast('error', 'Failed to regenerate.');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [platformId]: false }));
+    }
+  };
+
   const platforms = [
     {
       id: 'short-form',
+      dataKey: 'shortFormClips',
+      promptKey: 'shortFormClips',
       title: 'Short-Form Video',
       icon: Video,
       color: '#FF0050',
@@ -451,16 +528,28 @@ export default function RepurposingTab() {
 
   return (
     <div className="tab-content">
-      <div className="tab-header">
+      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2>Multi-Platform Repurposing</h2>
-          <p>Transform your content into 7+ platform-optimized formats</p>
+          <p>Transform your content into 6+ platform-optimized formats</p>
         </div>
+        <button 
+          onClick={handleAIGenerate}
+          disabled={isGenerating}
+          className="shiny-button"
+          style={{ padding: '10px 20px', gap: 8 }}
+        >
+          {isGenerating ? <div className="spinner" /> : <Zap size={18} fill="currentColor" />}
+          {isGenerating ? 'Analyzing...' : 'Generate All (AI)'}
+        </button>
       </div>
 
       <div style={{ display: 'grid', gap: '24px' }}>
         {platforms.map((platform, index) => {
           const Icon = platform.icon;
+          const isLoading = loadingStates[platform.id];
+          const hasData = platform.data;
+
           return (
             <motion.div
               key={platform.id}
@@ -486,8 +575,30 @@ export default function RepurposingTab() {
                   <Icon size={20} style={{ color: platform.color }} />
                 </div>
                 <h3 style={{ margin: 0 }}>{platform.title}</h3>
+                {isLoading && <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>Generating...</span>}
+                {!isLoading && hasData && (
+                  <button
+                    onClick={() => handleSingleRegenerate(platform.id)}
+                    className="icon-btn"
+                    style={{ marginLeft: 'auto' }}
+                    title="Regenerate this section"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                )}
               </div>
-              {platform.data && platform.render(platform.data)}
+
+              {isLoading ? (
+                <div className="card skeleton-card" style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div className="spinner" style={{ width: 24, height: 24, borderTopColor: platform.color }} />
+                </div>
+              ) : (
+                hasData ? platform.render(platform.data) : (
+                  <div className="card dashed-border" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                    <p>Click "Generate All" to create this content.</p>
+                  </div>
+                )
+              )}
             </motion.div>
           );
         })}

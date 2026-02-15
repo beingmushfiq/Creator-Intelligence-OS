@@ -1,13 +1,82 @@
-import React from 'react';
-import { Image, Palette, Layout, Type, Wand2, CheckCircle, Info } from 'lucide-react';
+import React, { useState } from 'react';
+import { Image, Palette, Layout, Type, Wand2, CheckCircle, Loader2, Sparkles } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { generateImage, enhanceImagePrompt } from '../engine/aiService';
+import { VISUAL_STYLES, ASPECT_RATIOS } from '../engine/visualPrompts';
+import { dbService } from '../services/dbService';
 import { RegenerateButton } from './ui/RegenerateButton';
 import { ExportButton } from './ui/ExportButton';
 import { CopyBlock } from './ui/CopyBlock';
 
 export default function ThumbnailsTab() {
   const { data, loading, regenerateSection } = useCreator();
+  const { user } = useAuth();
+  const { addToast } = useToast();
   const tb = data?.thumbnails;
+
+  const [generatedImages, setGeneratedImages] = useState([]);
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState('mrbeast');
+  const [selectedRatio, setSelectedRatio] = useState('landscape');
+  const [customPrompt, setCustomPrompt] = useState('');
+  const [isEnhancing, setIsEnhancing] = useState(false);
+
+  // Pre-fill prompt when data loads
+  React.useEffect(() => {
+    if (tb?.aiPrompt?.midjourney) {
+      setCustomPrompt(tb.aiPrompt.midjourney);
+    }
+  }, [tb]);
+
+  const handleEnhance = async () => {
+    if (!customPrompt) return;
+    setIsEnhancing(true);
+    try {
+      const enhanced = await enhanceImagePrompt(customPrompt);
+      setCustomPrompt(enhanced);
+      addToast('success', 'Prompt enhanced by AI!');
+    } catch (e) {
+      addToast('error', 'Enhancement failed');
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    try {
+      setLoadingImage(true);
+      addToast('info', `Generating ${VISUAL_STYLES[selectedStyle].label} thumbnail...`);
+      
+      const url = await generateImage(customPrompt, selectedStyle, selectedRatio);
+      
+      const newImage = {
+        url,
+        style: selectedStyle,
+        ratio: selectedRatio,
+        prompt: customPrompt,
+        timestamp: Date.now()
+      };
+
+      setGeneratedImages(prev => [newImage, ...prev]);
+      addToast('success', 'Thumbnail generated!');
+
+      // Save to Supabase
+      if (user) {
+        try {
+          await dbService.saveAsset(user.id, null, 'image', url, customPrompt);
+        } catch (e) {
+          console.warn('Asset save skipped:', e.message);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('error', 'Image generation failed. Check your OPENAI_API_KEY.');
+    } finally {
+      setLoadingImage(false);
+    }
+  };
 
   if (!tb) return <EmptyState />;
 
@@ -116,30 +185,121 @@ export default function ThumbnailsTab() {
         </div>
       </div>
 
-      {/* AI Prompts */}
+      {/* Studio Mode UI */}
       <div className="section-divider" />
       <h3 style={{ marginBottom: 'var(--space-md)', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-        AI Thumbnail Prompts
+        🎨 Studio Mode
       </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-        <CopyBlock content={tb.aiPrompt.midjourney} label="MIDJOURNEY PROMPT" />
-        <CopyBlock content={tb.aiPrompt.sdxl} label="SDXL PROMPT" />
-
-        <div className="card-grid" style={{ marginTop: 8 }}>
-          {[
-            { label: 'Lighting', value: tb.aiPrompt.lighting },
-            { label: 'Lens', value: tb.aiPrompt.lens },
-            { label: 'Mood', value: tb.aiPrompt.mood },
-            { label: 'Color Scheme', value: tb.aiPrompt.colorScheme },
-            { label: 'Angle', value: tb.aiPrompt.compositionAngle },
-          ].map((m, i) => (
-            <div key={i} className="meta-item" style={{ padding: 12, background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-              <span className="meta-label">{m.label}</span>
-              <span className="meta-value">{m.value}</span>
-            </div>
-          ))}
+      
+      <div className="card" style={{ padding: 24 }}>
+        
+        {/* Style Selector */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Visual Style</label>
+          <div className="grid-xs" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+            {Object.values(VISUAL_STYLES).map(style => (
+              <div 
+                key={style.id}
+                onClick={() => setSelectedStyle(style.id)}
+                className={`style-card ${selectedStyle === style.id ? 'active' : ''}`}
+                style={{
+                  padding: 12,
+                  borderRadius: 8,
+                  border: selectedStyle === style.id ? '2px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+                  background: selectedStyle === style.id ? 'rgba(var(--accent-primary-rgb), 0.1)' : 'var(--bg-tertiary)',
+                  cursor: 'pointer',
+                  textAlign: 'center',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{style.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Aspect Ratio */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>Aspect Ratio</label>
+          <div className="thumbnail-studio" style={{ display: 'flex', gap: 12 }}>
+            {Object.values(ASPECT_RATIOS).map(ratio => (
+              <button
+                key={ratio.id}
+                onClick={() => setSelectedRatio(ratio.id)}
+                className={selectedRatio === ratio.id ? 'btn-primary' : 'btn-secondary'}
+                style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid var(--border-medium)' }}
+              >
+                {ratio.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Prompt Editor */}
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+            <label style={{ fontWeight: 600 }}>Prompt</label>
+            <button 
+              onClick={handleEnhance} 
+              disabled={isEnhancing}
+              style={{ fontSize: '0.8rem', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <Wand2 size={12} className={isEnhancing ? 'spin' : ''} />
+              {isEnhancing ? 'Enhancing...' : 'Magic Enhance'}
+            </button>
+          </div>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            rows={4}
+            style={{
+              width: '100%',
+              padding: 12,
+              borderRadius: 8,
+              background: 'var(--bg-primary)',
+              border: '1px solid var(--border-medium)',
+              color: 'var(--text-primary)',
+              fontFamily: 'inherit',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+
+        {/* Generate Button */}
+        <button
+          onClick={handleGenerateImage}
+          disabled={loadingImage || !customPrompt}
+          className="shiny-button"
+          style={{ width: '100%', padding: 16, fontSize: '1rem', display: 'flex', justifyContent: 'center', gap: 8 }}
+        >
+          {loadingImage ? <Loader2 size={20} className="spin" /> : <Sparkles size={20} />}
+          {loadingImage ? 'Generating...' : 'Generate Thumbnail'}
+        </button>
       </div>
+
+      {/* Gallery */}
+      {generatedImages.length > 0 && (
+        <div style={{ marginTop: 32 }}>
+          <h3 style={{ marginBottom: 16 }}>Gallery</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {generatedImages.map((img, i) => (
+              <div key={i} className="card" style={{ overflow: 'hidden' }}>
+                <img src={img.url} style={{ width: '100%', aspectRatio: img.ratio === 'landscape' ? '16/9' : '9/16', objectFit: 'cover' }} />
+                <div style={{ padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 4 }}>
+                    <span>{VISUAL_STYLES[img.style]?.label}</span>
+                    <span>{ASPECT_RATIOS[img.ratio]?.label}</span>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {img.prompt}
+                  </div>
+                  <a href={img.url} target="_blank" style={{ display: 'block', marginTop: 8, fontSize: '0.8rem', color: 'var(--accent-primary)' }}>Download High-Res</a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

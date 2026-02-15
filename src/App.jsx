@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -15,22 +15,45 @@ import {
   Zap,
   Layout,
   Menu,
-  BarChart2
+  BarChart2,
+  Clock,
+  FolderOpen,
+  Loader2,
+  Handshake,
+  MessageSquare,
+  Users
 } from 'lucide-react';
 import { CreatorProvider, useCreator } from './context/CreatorContext';
+import { ToastProvider, useToast } from './context/ToastContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthPage } from './components/AuthPage';
+import AudioPlayer from './components/AudioPlayer';
+
 import TopicInput from './components/TopicInput';
-import StrategyTab from './components/StrategyTab';
-import ScriptTab from './components/ScriptTab';
-import MotionPromptsTab from './components/MotionPromptsTab';
-import TitlesTab from './components/TitlesTab';
-import ThumbnailsTab from './components/ThumbnailsTab';
-import ResearchTab from './components/ResearchTab';
-import SeriesTab from './components/SeriesTab';
-import OptimizationTab from './components/OptimizationTab';
-import SettingsPage from './components/SettingsPage';
 import CommandPalette from './components/ui/CommandPalette';
-import RepurposingTab from './components/RepurposingTab';
-import AnalyticsTab from './components/AnalyticsTab';
+
+// Lazy-loaded tab components (code splitting)
+const StrategyTab = lazy(() => import('./components/StrategyTab'));
+const ScriptTab = lazy(() => import('./components/ScriptTab'));
+const RepurposingTab = lazy(() => import('./components/RepurposingTab'));
+const MotionPromptsTab = lazy(() => import('./components/MotionPromptsTab'));
+const TitlesTab = lazy(() => import('./components/TitlesTab'));
+const ThumbnailsTab = lazy(() => import('./components/ThumbnailsTab'));
+const ResearchTab = lazy(() => import('./components/ResearchTab'));
+const SeriesTab = lazy(() => import('./components/SeriesTab'));
+const OptimizationTab = lazy(() => import('./components/OptimizationTab'));
+const SeoTab = lazy(() => import('./components/SeoTab'));
+const DealsTab = lazy(() => import('./components/DealsTab'));
+const SettingsPage = lazy(() => import('./components/SettingsPage'));
+const AnalyticsTab = lazy(() => import('./components/AnalyticsTab'));
+const HistoryTab = lazy(() => import('./components/HistoryTab'));
+const AssetLibrary = lazy(() => import('./components/AssetLibrary'));
+const TeamSwitcher = lazy(() => import('./components/TeamSwitcher'));
+const CommentsSidebar = lazy(() => import('./components/CommentsSidebar'));
+const TeamSettingsModal = lazy(() => import('./components/TeamSettingsModal'));
+import { SaveProjectModal } from './components/SaveProjectModal';
+
+
 
 const TABS = [
   { id: 'strategy', label: 'Strategy', icon: Compass },
@@ -41,8 +64,12 @@ const TABS = [
   { id: 'thumbnails', label: 'Thumbnails', icon: Image },
   { id: 'research', label: 'Research Mode', icon: Search },
   { id: 'series', label: 'Series Builder', icon: GitBranch },
+  { id: 'seo', label: 'SEO Engine', icon: Search },
+  { id: 'deals', label: 'Deal Flow', icon: Handshake }, // Handshake is not imported yet!
   { id: 'optimization', label: 'Optimization', icon: Settings },
   { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+  { id: 'history', label: 'History', icon: Clock },
+  { id: 'assets', label: 'Asset Library', icon: FolderOpen },
 ];
 
 const TAB_COMPONENTS = {
@@ -54,31 +81,89 @@ const TAB_COMPONENTS = {
   thumbnails: ThumbnailsTab,
   research: ResearchTab,
   series: SeriesTab,
+  seo: SeoTab,
+  deals: DealsTab,
   optimization: OptimizationTab,
   analytics: AnalyticsTab,
+  history: HistoryTab,
+  assets: AssetLibrary,
   settings: SettingsPage,
 };
 
-import { ToastProvider } from './context/ToastContext';
-
-export default function App() {
+// Loading fallback for lazy components
+function TabLoader() {
   return (
-    <CreatorProvider>
-      <ToastProvider>
-        <AppShell />
-      </ToastProvider>
-    </CreatorProvider>
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '50vh',
+      gap: 12,
+      color: 'var(--text-tertiary)',
+    }}>
+      <Loader2 size={24} style={{ animation: 'spin 1s linear infinite' }} />
+      <span style={{ fontSize: '0.9rem', fontWeight: 500 }}>Loading...</span>
+    </div>
   );
 }
 
-function AppShell() {
-  const { activeTab, setActiveTab, data, backendReady, resetSession } = useCreator();
+function AppContent() {
+  const { user, loading } = useAuth();
+  
+  // Use CreatorContext for session persistence
+  const { activeTab, setActiveTab, data, backendReady, resetSession, saveCurrentProject, comments } = useCreator();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const { addToast } = useToast();
+
+  const handleNewProject = () => {
+    if (data) {
+      setShowSaveModal(true);
+    } else {
+      resetSession();
+      addToast('info', 'New project started');
+    }
+    setMobileOpen(false);
+  };
+
+  const onSaveAndNew = async () => {
+    const success = await saveCurrentProject();
+    if (success) {
+      addToast('success', 'Project saved successfully');
+      resetSession();
+      setShowSaveModal(false);
+    } else {
+      addToast('error', 'Failed to save project');
+    }
+  };
+
+  const onDiscardAndNew = () => {
+    resetSession();
+    setShowSaveModal(false);
+    addToast('info', 'New project started (unsaved changes discarded)');
+  };
+  
   const ActiveComponent = TAB_COMPONENTS[activeTab] || StrategyTab;
 
-  // Global keyboard shortcuts
-  React.useEffect(() => {
+  // Show loading state or login screen
+  if (loading) return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      background: 'var(--bg-primary)',
+    }}>
+      <Loader2 size={32} style={{ animation: 'spin 1s linear infinite', color: 'var(--accent-primary)' }} />
+    </div>
+  );
+  
+  if (!user) return <AuthPage />;
+
+  // Keyboard Shortcuts
+  useEffect(() => {
     const handleKeyDown = (e) => {
       // Cmd/Ctrl + K for command palette
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -96,9 +181,7 @@ function AppShell() {
       // Cmd/Ctrl + N for new project
       if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
         e.preventDefault();
-        if (confirm('Start a new project? This will clear your current session.')) {
-          resetSession();
-        }
+        handleNewProject();
       }
       // Cmd/Ctrl + , for settings
       if ((e.metaKey || e.ctrlKey) && e.key === ',') {
@@ -133,7 +216,6 @@ function AppShell() {
           <div 
             className="sidebar-logo cursor-pointer hover:opacity-80 transition-opacity" 
             onClick={() => {
-              console.log('Sidebar Logo Clicked -> Navigate Home');
               setActiveTab('strategy');
               setMobileOpen(false);
             }}
@@ -146,6 +228,11 @@ function AppShell() {
               <div className="sidebar-logo-text">Creator<span className="text-gradient"> Intelligence</span></div>
               <div className="sidebar-logo-sub">OS v1.0</div>
             </div>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <Suspense fallback={<div style={{ height: 40 }} />}>
+              <TeamSwitcher />
+            </Suspense>
           </div>
         </div>
 
@@ -181,12 +268,7 @@ function AppShell() {
         <div className="sidebar-footer">
           {/* New Project Button */}
           <button
-            onClick={() => {
-              if (window.confirm('Start a new project? This will clear current data.')) {
-                resetSession();
-                setMobileOpen(false);
-              }
-            }}
+            onClick={handleNewProject}
             className="card"
             style={{
               width: '100%',
@@ -195,14 +277,6 @@ function AppShell() {
               cursor: 'pointer',
               border: '1px solid var(--border-subtle)',
               transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent-primary)';
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              e.currentTarget.style.background = 'var(--bg-card)';
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -228,7 +302,7 @@ function AppShell() {
             </div>
           </button>
 
-          {/* AI Settings Button */}
+          {/* Settings Button */}
           <button
             onClick={() => {
               setActiveTab('settings');
@@ -242,14 +316,6 @@ function AppShell() {
               cursor: 'pointer',
               border: '1px solid var(--border-subtle)',
               transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent-primary)';
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-subtle)';
-              e.currentTarget.style.background = 'var(--bg-card)';
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -266,10 +332,10 @@ function AppShell() {
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
                 <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 2 }}>
-                  AI Settings
+                  Settings
                 </div>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                  Configure API keys
+                  AI & Account
                 </div>
               </div>
               <div className={`w-2 h-2 rounded-full ${
@@ -285,8 +351,48 @@ function AppShell() {
         </div>
       </aside>
 
-      {/* Main content */}
       <main className="main-content">
+        <button
+          onClick={() => setShowComments(!showComments)}
+          style={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32,
+            width: 56,
+            height: 56,
+            zIndex: 50,
+            borderRadius: '50%',
+            background: 'var(--accent-primary)',
+            border: 'none',
+            boxShadow: '0 4px 14px rgba(124, 92, 252, 0.4)',
+            cursor: 'pointer',
+            color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          title="Team Chat"
+        >
+          <MessageSquare size={24} />
+          {comments[activeTab]?.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: -6, right: -6,
+              background: '#ef4444',
+              color: 'white',
+              fontSize: '0.75rem',
+              fontWeight: 700,
+              minWidth: 20, height: 20,
+              borderRadius: 10,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '2px solid var(--bg-primary)'
+            }}>
+              {comments[activeTab].length}
+            </div>
+          )}
+        </button>
+
         {activeTab !== 'settings' && <TopicInput />}
 
         {/* Active tab indicator bar */}
@@ -328,7 +434,6 @@ function AppShell() {
         </div>
         )}
 
-        {/* Loading overlay */}
         {/* Tab content */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -338,11 +443,20 @@ function AppShell() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
           >
-            <ActiveComponent />
+            <Suspense fallback={<TabLoader />}>
+              <ActiveComponent />
+            </Suspense>
           </motion.div>
         </AnimatePresence>
+        
+        <Suspense fallback={null}>
+          <CommentsSidebar 
+            isOpen={showComments} 
+            onClose={() => setShowComments(false)} 
+            contextId={activeTab} 
+          />
+        </Suspense>
       </main>
-      {/* Settings Modal Removed */}
       
       {/* Command Palette */}
       {commandPaletteOpen && (
@@ -352,6 +466,32 @@ function AppShell() {
           onClose={() => setCommandPaletteOpen(false)}
         />
       )}
+      
+      {/* Global Audio Player */}
+      <AudioPlayer />
+
+      <SaveProjectModal 
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSaveAndNew={onSaveAndNew}
+        onDiscardAndNew={onDiscardAndNew}
+      />
+      
+      <Suspense fallback={null}>
+        <TeamSettingsModal />
+      </Suspense>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AuthProvider>
+        <CreatorProvider>
+          <AppContent />
+        </CreatorProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }

@@ -27,7 +27,7 @@ const PORT = process.env.PORT || 3001;
 // ── Save Config ──
 app.post('/api/config/keys', (req, res) => {
   try {
-    const { OPENAI_API_KEY, GEMINI_API_KEY, CLAUDE_API_KEY } = req.body;
+    const { OPENAI_API_KEY, GEMINI_API_KEY, CLAUDE_API_KEY, ELEVENLABS_API_KEY } = req.body;
     let envContent = '';
 
     if (fs.existsSync(ENV_PATH)) {
@@ -49,6 +49,7 @@ app.post('/api/config/keys', (req, res) => {
     updateKey('OPENAI_API_KEY', OPENAI_API_KEY);
     updateKey('GEMINI_API_KEY', GEMINI_API_KEY);
     updateKey('CLAUDE_API_KEY', CLAUDE_API_KEY);
+    updateKey('ELEVENLABS_API_KEY', ELEVENLABS_API_KEY);
 
     fs.writeFileSync(ENV_PATH, envContent);
     console.log('API Keys updated successfully');
@@ -259,6 +260,80 @@ function extractJSON(text) {
 
   throw new Error('Failed to parse JSON from LLM response');
 }
+
+// ── Image Generation (DALL-E 3) ──
+app.post('/api/generate-image', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    if (!apiKey) return res.status(500).json({ error: 'OpenAI API Key missing' });
+
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "dall-e-3",
+        prompt: prompt,
+        n: 1,
+        size: "1024x1024",
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(`OpenAI Image Error: ${err.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    res.json({ url: data.data[0].url });
+  } catch (err) {
+    console.error('Image Generation Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Voice Generation (ElevenLabs) ──
+app.post('/api/generate-speech', async (req, res) => {
+  try {
+    const { text, voiceId } = req.body;
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const voice = voiceId || '21m00Tcm4TlvDq8ikWAM'; // Default "Rachel"
+
+    if (!apiKey) return res.status(500).json({ error: 'ElevenLabs API Key missing' });
+
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voice}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text,
+        model_id: "eleven_monolingual_v1",
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(`ElevenLabs Error: ${err.detail?.message || response.statusText}`);
+    }
+
+    // Pipe the audio stream directly to the client
+    res.setHeader('Content-Type', 'audio/mpeg');
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+
+  } catch (err) {
+    console.error('Voice Generation Error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── Start Server ──
 app.listen(PORT, () => {

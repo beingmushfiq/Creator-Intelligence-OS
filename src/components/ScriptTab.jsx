@@ -1,13 +1,55 @@
 import React, { useState } from 'react';
-import { ChevronDown, Film, Camera, Sun, Music, Wand2, FileText } from 'lucide-react';
+import { ChevronDown, Film, Camera, Sun, Music, Wand2, FileText, Play } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { generateSpeech } from '../engine/aiService';
+import { dbService } from '../services/dbService';
 import { RegenerateButton } from './ui/RegenerateButton';
 import { ExportButton } from './ui/ExportButton';
 import { CopyBlock } from './ui/CopyBlock';
 
 export default function ScriptTab() {
-  const { data, loading, regenerateSection } = useCreator();
+  const { data, loading, regenerateSection, setCurrentAudio } = useCreator();
+  const { user } = useAuth();
   const script = data?.script;
+  const { addToast } = useToast();
+  
+  const [loadingAudio, setLoadingAudio] = useState(false);
+
+  const handleGenerateAudio = async () => {
+    if (!script || !script.sections) return;
+    
+    // Combine all section content for reading
+    const fullText = script.sections.map(s => s.content).join('\n\n');
+    
+    if (!fullText) {
+      addToast('error', 'No script content to read.');
+      return;
+    }
+
+    try {
+      setLoadingAudio(true);
+      addToast('info', 'Generating audio with ElevenLabs...');
+      const audioUrl = await generateSpeech(fullText);
+      setCurrentAudio(audioUrl);
+      addToast('success', 'Audio generation complete!');
+
+      // Save to Supabase
+      if (user) {
+        try {
+          await dbService.saveAsset(user.id, null, 'audio', audioUrl, 'Script read-through');
+        } catch (e) {
+          console.warn('Asset save skipped:', e.message);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      addToast('error', 'Failed to generate audio. Check API Key.');
+    } finally {
+      setLoadingAudio(false);
+    }
+  };
 
   if (!script) return <EmptyState />;
 
@@ -21,6 +63,20 @@ export default function ScriptTab() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={handleGenerateAudio}
+            disabled={loadingAudio}
+            className="flex items-center gap-2 px-3 py-2 bg-accent-primary/10 hover:bg-accent-primary/20 text-accent-primary rounded-lg transition-colors border border-accent-primary/20 text-sm font-bold"
+          >
+            {loadingAudio ? (
+              <span className="animate-pulse">Generating...</span>
+            ) : (
+              <>
+                <Play size={14} fill="currentColor" />
+                Listen
+              </>
+            )}
+          </button>
           <ExportButton section="script" data={script} />
           <RegenerateButton onClick={() => regenerateSection('script')} loading={loading} />
         </div>
