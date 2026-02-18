@@ -47,8 +47,39 @@ function generateMockSection(section, topic, tone) {
     case 'series': return generateSeries(t);
     case 'optimization': return generateOptimization(t);
     case 'motionPrompts': return generateMotionPrompts(t);
+    case 'seo': return generateMockSeo(t);
     default: return {};
   }
+}
+
+function generateMockSeo(topic) {
+  return {
+    keywords: [
+      { keyword: topic, volume: 'High', competition: 'High' },
+      { keyword: `${topic} guide`, volume: 'Medium', competition: 'Low' },
+      { keyword: `future of ${topic}`, volume: 'Medium', competition: 'Medium' }
+    ],
+    metadata: {
+      title: `The Ultimate Guide to ${topic}`,
+      description: `Discover everything you need to know about ${topic}. We dive deep into the mechanics and future shifts.`,
+      tags: [topic, 'education', 'analysis'],
+      file_name: `${topic.toLowerCase().replace(/ /g, '-')}.mp4`
+    },
+    trends: [`Rising interest in ${topic} among Gen Z`, `${topic} mentioned in recent tech keynote`],
+    tiktok: {
+      trendingSounds: ['Minimalist Synth Pulse', 'Corporate Lofi', 'Dramatic Reveal Bass'],
+      hashtags: ['#creator', `#${topic.replace(/ /g, '')}`, '#learnontiktok', '#insight'],
+      hookStyles: ['The truth about...', 'I wish I knew this earlier', 'Stop scrolling!']
+    },
+    google: {
+      score: 82,
+      recommendations: ['Add more internal links', 'Optimize meta description', 'Increase keyword density in H2s']
+    },
+    predictions: [
+      { trend: 'AI-Driven Personalization', timeFrame: '3-6 months', impactScore: 9 },
+      { trend: 'Decentralized Distribution', timeFrame: '6-12 months', impactScore: 7 }
+    ]
+  };
 }
 
 // Real AI Generation

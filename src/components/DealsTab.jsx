@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Handshake, Search, Mail, DollarSign, Calculator, Send, Copy, Building2, TrendingUp, CheckCircle2, Loader2 } from 'lucide-react';
+import { Handshake, Search, Mail, DollarSign, Calculator, Send, Copy, Building2, TrendingUp, CheckCircle2, Loader2, Link2, Plus, Trash2, ExternalLink } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 import { useToast } from '../context/ToastContext';
 import { ExportButton } from './ui/ExportButton';
+import MediaKit from './MediaKit';
+import { generateAnalyticsData } from '../utils/analyticsData';
 import { CopyBlock } from './ui/CopyBlock';
 
 export default function DealsTab() {
-  const { data, setData, topic } = useCreator();
+  const { data, setData, topic, affiliates, setAffiliates } = useCreator();
   const { addToast } = useToast();
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -94,6 +96,26 @@ export default function DealsTab() {
   const rates = calculateRates();
   const formatMoney = (val) => `$${Math.round(val).toLocaleString()}`;
 
+  const currentAffiliates = affiliates.length > 0 ? affiliates : [
+    { name: 'Amazon Associates', link: 'https://amazon.com/affiliate', sales: 12, earnings: 450 },
+    { name: 'Epidemic Sound', link: 'https://epidemicsound.com', sales: 5, earnings: 125 }
+  ];
+
+  const handleAddAffiliate = () => {
+    const name = prompt("Enter Affiliate Program Name:");
+    const link = prompt("Enter Affiliate Link:");
+    if (name && link) {
+      setAffiliates([...currentAffiliates, { name, link, sales: 0, earnings: 0 }]);
+      addToast('success', 'Affiliate link added!');
+    }
+  };
+
+  const handleRemoveAffiliate = (index) => {
+    const newAffiliates = currentAffiliates.filter((_, i) => i !== index);
+    setAffiliates(newAffiliates);
+    addToast('info', 'Affiliate link removed');
+  };
+
   if (!deals.brands && !isAnalyzing) {
     return (
       <div className="tab-content center-content">
@@ -123,6 +145,7 @@ export default function DealsTab() {
           <p className="tab-subtitle">Monetize your influence with data-backed deals</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <MediaKit creatorData={{ niche, topic }} analyticsData={generateAnalyticsData()} dealsData={deals} />
           <ExportButton section="deals" data={deals} />
           <button onClick={handleFindSponsors} disabled={isAnalyzing} className="icon-btn" title="Refresh Sponsors">
             <Handshake size={18} className={isAnalyzing ? 'spin' : ''} />
@@ -332,6 +355,57 @@ export default function DealsTab() {
               
               <div style={{ marginTop: 16, fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
                 *Based on calculated CPM of <strong>{formatMoney(rates.cpm)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Affiliate Link Manager Section */}
+        <div style={{ gridColumn: '1 / -1', marginTop: 32 }}>
+          <div className="card">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="card-title-group">
+                <div className="card-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                  <Link2 size={18} />
+                </div>
+                <h3>Affiliate Link Manager</h3>
+              </div>
+              <button onClick={handleAddAffiliate} className="shiny-button" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+                <Plus size={14} /> Add Link
+              </button>
+            </div>
+            <div className="card-body">
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left' }}>
+                      <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>Program</th>
+                      <th style={{ padding: '12px', color: 'var(--text-secondary)' }}>Link</th>
+                      <th style={{ padding: '12px', color: 'var(--text-secondary)', textAlign: 'center' }}>Sales</th>
+                      <th style={{ padding: '12px', color: 'var(--text-secondary)', textAlign: 'right' }}>Earnings</th>
+                      <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentAffiliates.map((aff, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <td style={{ padding: '12px', fontWeight: 600 }}>{aff.name}</td>
+                        <td style={{ padding: '12px', color: 'var(--accent-secondary)' }}>
+                          <a href={aff.link} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'inherit', textDecoration: 'none' }}>
+                            {aff.link.substring(0, 30)}... <ExternalLink size={12} />
+                          </a>
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>{aff.sales}</td>
+                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: 'var(--accent-success)' }}>{formatMoney(aff.earnings)}</td>
+                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                          <button onClick={() => handleRemoveAffiliate(i)} className="icon-btn-sm" style={{ color: 'var(--accent-danger)' }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

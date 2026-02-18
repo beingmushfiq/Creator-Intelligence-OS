@@ -76,7 +76,10 @@ export async function generateSeoData(topic, onProgress) {
   const tasks = [
     { key: 'keywords', prompt: SEO_PROMPTS.keywordResearch },
     { key: 'metadata', prompt: SEO_PROMPTS.metadataOptimization },
-    { key: 'trends', prompt: SEO_PROMPTS.trendAlignment }
+    { key: 'trends', prompt: SEO_PROMPTS.trendAlignment },
+    { key: 'tiktok', prompt: SEO_PROMPTS.tiktokInsights },
+    { key: 'google', prompt: SEO_PROMPTS.googleSearchVisibility },
+    { key: 'predictions', prompt: SEO_PROMPTS.trendPrediction }
   ];
 
   await Promise.allSettled(tasks.map(async (task) => {
