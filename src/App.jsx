@@ -46,6 +46,7 @@ const SeoTab = lazy(() => import('./components/SeoTab'));
 const DealsTab = lazy(() => import('./components/DealsTab'));
 const SettingsPage = lazy(() => import('./components/SettingsPage'));
 const AnalyticsTab = lazy(() => import('./components/AnalyticsTab'));
+const LearningTab = lazy(() => import('./components/LearningTab'));
 const HistoryTab = lazy(() => import('./components/HistoryTab'));
 const AssetLibrary = lazy(() => import('./components/AssetLibrary'));
 const TeamSwitcher = lazy(() => import('./components/TeamSwitcher'));
@@ -65,9 +66,10 @@ const TABS = [
   { id: 'research', label: 'Research Mode', icon: Search },
   { id: 'series', label: 'Series Builder', icon: GitBranch },
   { id: 'seo', label: 'SEO Engine', icon: Search },
-  { id: 'deals', label: 'Deal Flow', icon: Handshake }, // Handshake is not imported yet!
+  { id: 'deals', label: 'Deal Flow', icon: Handshake },
   { id: 'optimization', label: 'Optimization', icon: Settings },
   { id: 'analytics', label: 'Analytics', icon: BarChart2 },
+  { id: 'academy', label: 'Academy', icon: Users },
   { id: 'history', label: 'History', icon: Clock },
   { id: 'assets', label: 'Asset Library', icon: FolderOpen },
 ];
@@ -85,6 +87,7 @@ const TAB_COMPONENTS = {
   deals: DealsTab,
   optimization: OptimizationTab,
   analytics: AnalyticsTab,
+  academy: LearningTab,
   history: HistoryTab,
   assets: AssetLibrary,
   settings: SettingsPage,

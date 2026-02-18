@@ -35,6 +35,8 @@ export function CreatorProvider({ children }) {
 
   // Check backend on load
   // Check backend & Restore session on load
+  const [affiliates, setAffiliates] = useState([]);
+
   // Check backend & Restore session on load
   useEffect(() => {
     checkBackendHealth().then(setBackendReady);
@@ -56,16 +58,17 @@ export function CreatorProvider({ children }) {
         if (parsed.topic) setTopic(parsed.topic);
         if (parsed.tone) setTone(parsed.tone);
         if (parsed.data) setData(parsed.data);
+        if (parsed.affiliates) setAffiliates(parsed.affiliates);
       } catch (e) { console.error('Failed to restore session', e); }
     }
   }, []);
 
   // Persist Session
   useEffect(() => {
-    if (topic || data) {
-      localStorage.setItem('creator_session', JSON.stringify({ topic, tone, data }));
+    if (topic || data || affiliates.length > 0) {
+      localStorage.setItem('creator_session', JSON.stringify({ topic, tone, data, affiliates }));
     }
-  }, [topic, tone, data]);
+  }, [topic, tone, data, affiliates]);
 
   // Persist Settings
   useEffect(() => {
@@ -202,7 +205,8 @@ export function CreatorProvider({ children }) {
     activeWorkspace, setActiveWorkspace,
     workspaces, setWorkspaces,
     comments, addComment,
-    showTeamSettings, setShowTeamSettings
+    showTeamSettings, setShowTeamSettings,
+    affiliates, setAffiliates
   };
 
   return (

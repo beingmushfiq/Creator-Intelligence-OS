@@ -11,12 +11,39 @@ import {
   Copy,
   Check,
   Download,
-  RefreshCw
+  RefreshCw,
+  GitMerge,
+  ArrowRight,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 import { useToast } from '../context/ToastContext';
 import { repurposeContent } from '../utils/repurposingUtils';
 import EditableText from './ui/EditableText';
+
+const WorkflowStep = ({ icon: Icon, label, status }) => {
+  const colors = {
+    completed: 'var(--accent-success)',
+    active: 'var(--accent-secondary)',
+    pending: 'var(--text-tertiary)'
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1, minWidth: '100px' }}>
+      <div style={{
+        width: 48, height: 48, borderRadius: '50%',
+        border: `2px solid ${colors[status]}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: colors[status],
+        background: status === 'active' ? `${colors[status]}15` : 'transparent'
+      }}>
+        <Icon size={20} />
+      </div>
+      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: colors[status], textAlign: 'center' }}>{label}</span>
+    </div>
+  );
+};
 
 export default function RepurposingTab() {
   const { data, setData } = useCreator();
@@ -528,6 +555,29 @@ export default function RepurposingTab() {
 
   return (
     <div className="tab-content">
+      {/* Smart Workflow Section */}
+      <div className="card" style={{ padding: '24px', marginBottom: '32px', border: '1px solid var(--accent-secondary)', background: 'rgba(0, 212, 255, 0.03)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <GitMerge size={20} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Smart Workflow: YouTube → TikTok</h3>
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Automated Content Re-engineering Pipeline</p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <WorkflowStep icon={Video} label="Master Script" status="completed" />
+          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+          <WorkflowStep icon={Sparkles} label="AI Hook Extraction" status="active" />
+          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+          <WorkflowStep icon={FileText} label="Visual Scripting" status="pending" />
+          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
+          <WorkflowStep icon={Video} label="Final Short-Form" status="pending" />
+        </div>
+      </div>
+
       <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h2>Multi-Platform Repurposing</h2>

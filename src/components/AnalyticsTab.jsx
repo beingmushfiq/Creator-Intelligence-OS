@@ -13,7 +13,7 @@ import {
   Cell,
   Legend
 } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Eye, Activity, Download } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, DollarSign, Users, Eye, Activity, Download, Brain, Sparkles, AlertCircle, Target } from 'lucide-react';
 import { generateAnalyticsData } from '../utils/analyticsData';
 import { ExportButton } from './ui/ExportButton';
 
@@ -145,6 +145,59 @@ export default function AnalyticsTab() {
         </div>
       </div>
 
+      {/* AI Content Coach & Burnout Prevention */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+        {/* AI Coach */}
+        <div className="card" style={{ padding: '24px', border: '1px solid rgba(124, 92, 252, 0.3)', background: 'rgba(124, 92, 252, 0.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <Brain size={20} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>AI Content Coach</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Personalized Growth Recommendations</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <CoachInsight
+              icon={Sparkles}
+              text="Your retention on 'AI Automation' is 15% above niche average. Double down on this format."
+              type="opportunity"
+            />
+            <CoachInsight
+              icon={Target}
+              text="Engagement on TikTok is lagging. Try using 'Pattern Interrupt' hooks in the first 2 seconds."
+              type="action"
+            />
+          </div>
+        </div>
+
+        {/* Burnout Prevention */}
+        <div className="card" style={{ padding: '24px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.02)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <AlertCircle size={20} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Workload & Burnout</h3>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Sustainable Creation Analysis</p>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 8 }}>
+                <span>Weekly Content Output</span>
+                <span style={{ fontWeight: 600, color: '#f59e0b' }}>High Risk</span>
+             </div>
+             <div style={{ height: 8, background: 'var(--bg-tertiary)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ width: '85%', height: '100%', background: 'linear-gradient(90deg, #10b981, #f59e0b, #ef4444)' }} />
+             </div>
+          </div>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+            Warning: Your current output pace has increased 40% this week. Consider scheduling an evergreen "Recycling Day" to prevent fatigue.
+          </p>
+        </div>
+      </div>
+
       {/* Top Content Table */}
       <div className="card" style={{ padding: '24px' }}>
         <h3 style={{ marginBottom: '20px', fontSize: '1.1rem' }}>Recent Top Content</h3>
@@ -222,6 +275,21 @@ function KPICard({ title, value, trend, icon: Icon, color }) {
       </div>
       <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', marginBottom: '4px' }}>{title}</div>
       <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{value}</div>
+    </div>
+  );
+}
+
+function CoachInsight({ icon: Icon, text, type }) {
+  const colors = {
+    opportunity: 'var(--accent-primary)',
+    action: '#00d4ff',
+    warning: '#ef4444'
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 12, padding: 12, background: 'var(--bg-secondary)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
+      <Icon size={16} style={{ color: colors[type], marginTop: 2, flexShrink: 0 }} />
+      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>{text}</p>
     </div>
   );
 }

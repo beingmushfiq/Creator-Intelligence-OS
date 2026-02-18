@@ -34,5 +34,29 @@ export const SEO_PROMPTS = {
     Connect the evergreen topic to current events, new tech, or cultural moments.
     
     Output strictly as a JSON array of strings.
+  `,
+
+  tiktokInsights: `
+    You are a TikTok Algorithm Expert.
+    Analyze the topic and provide:
+    - 3-5 trending sounds/audio categories that fit this content.
+    - 10 high-performing hashtags.
+    - 3 viral hook styles (e.g., "The Problem with...", "Stop doing X", "I wish I knew this").
+
+    Output strictly as a JSON object with keys: trendingSounds, hashtags, hookStyles.
+  `,
+
+  googleSearchVisibility: `
+    You are a Search Engine Specialist.
+    Analyze the topic/script and provide an SEO score (0-100) and 3 specific recommendations to improve Google Search visibility for a blog post based on this content.
+
+    Output strictly as a JSON object with keys: score, recommendations.
+  `,
+
+  trendPrediction: `
+    You are a Future Trends Forecaster.
+    Based on the topic, predict 3 upcoming shifts or "next big things" related to this area over the next 6-12 months.
+
+    Output strictly as a JSON array of objects with keys: trend, timeFrame, impactScore (1-10).
   `
 };
