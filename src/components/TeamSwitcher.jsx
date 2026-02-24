@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { ChevronDown, Users, User, Plus } from 'lucide-react';
+import { ChevronDown, Users, User, Plus, Settings, Loader2 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 
 export default function TeamSwitcher() {
-  const { activeWorkspace, setActiveWorkspace, workspaces, setShowTeamSettings } = useCreator();
+  const { activeWorkspace, setActiveWorkspace, workspaces, setShowTeamSettings, createTeam } = useCreator();
   const [isOpen, setIsOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const currentWs = workspaces.find(w => w.id === activeWorkspace) || workspaces[0];
 
@@ -47,7 +48,9 @@ export default function TeamSwitcher() {
             style={{ position: 'fixed', inset: 0, zIndex: 40 }} 
             onClick={() => setIsOpen(false)}
           />
-          <div style={{
+          <div 
+            className="team-switcher-dropdown"
+            style={{
             position: 'absolute',
             top: '100%', left: 0, right: 0,
             marginTop: 4,
@@ -110,6 +113,21 @@ export default function TeamSwitcher() {
               <span style={{ fontSize: '0.85rem' }}>Manage Team</span>
             </button>
             <button
+               disabled={isCreating}
+               onClick={async () => {
+                 const name = prompt('Enter team name:');
+                 if (name) {
+                   setIsCreating(true);
+                   try {
+                     await createTeam(name);
+                     setIsOpen(false);
+                   } catch (e) {
+                     alert('Failed to create team');
+                   } finally {
+                     setIsCreating(false);
+                   }
+                 }
+               }}
                style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -121,11 +139,14 @@ export default function TeamSwitcher() {
                 borderRadius: 6,
                 color: 'var(--text-tertiary)',
                 cursor: 'pointer',
-                textAlign: 'left'
+                textAlign: 'left',
+                opacity: isCreating ? 0.5 : 1
               }}
             >
-              <div style={{ width: 24, display: 'flex', justifyContent: 'center' }}><Plus size={14} /></div>
-              <span style={{ fontSize: '0.85rem' }}>Create Team</span>
+              <div style={{ width: 24, display: 'flex', justifyContent: 'center' }}>
+                {isCreating ? <Loader2 size={14} className="spin" /> : <Plus size={14} />}
+              </div>
+              <span style={{ fontSize: '0.85rem' }}>{isCreating ? 'Creating...' : 'Create Team'}</span>
             </button>
           </div>
         </>

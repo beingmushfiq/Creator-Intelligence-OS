@@ -5,7 +5,11 @@
 // Each returns the exact JSON schema the UI expects.
 
 export function buildSystemPrompt(section, tone) {
-  const toneInstruction = TONE_MAP[tone] || TONE_MAP.Analytical;
+  // Custom tones are passed as 'custom:<user description>'
+  const isCustom = typeof tone === 'string' && tone.startsWith('custom:');
+  const toneInstruction = isCustom
+    ? tone.slice(7).trim()
+    : (TONE_MAP[tone] || TONE_MAP.Analytical);
 
   if (section === 'all') {
     return `${MASTER_SYSTEM_PROMPT}\n\nTone instruction: Write in a ${toneInstruction} tone.\n\n${ALL_ENGINES_SCHEMA}`;
@@ -17,11 +21,22 @@ export function buildSystemPrompt(section, tone) {
   return `${MASTER_SYSTEM_PROMPT}\n\nTone instruction: Write in a ${toneInstruction} tone.\n\n${sectionPrompt}`;
 }
 
-export function buildUserPrompt(topic, section = 'all') {
-  if (section === 'all') {
-    return `Generate a complete Creator Intelligence analysis for this topic:\n\n"${topic}"\n\nReturn the FULL JSON object with all 8 keys: narrative, script, research, titles, thumbnails, series, optimization, motionPrompts. Follow the exact schemas specified.`;
+export function buildUserPrompt(topic, section = 'all', options = {}) {
+  const { withProductCTA, productData, withCommunitySegments, communityData } = options;
+  let contextInfo = '';
+  
+  if (withProductCTA && productData) {
+    contextInfo += `\n\nCRITICAL: Weave in a Call-to-Action for the digital product: "${productData.blueprint.title}". Value Ladder: ${JSON.stringify(productData.valueLadder)}.`;
   }
-  return `Generate the "${section}" section of a Creator Intelligence analysis for this topic:\n\n"${topic}"\n\nReturn ONLY the JSON for this section, following the exact schema specified.`;
+  
+  if (withCommunitySegments && communityData) {
+    contextInfo += `\n\nCRITICAL: Inject "Community Feedback Segments". Include a Q&A based on the community rituals (${JSON.stringify(communityData.rituals)}) and social proof themes (${JSON.stringify(communityData.socialProof.map(p => p.type))}). Make it feel like you are responding to a real viewer named "Alex".`;
+  }
+
+  if (section === 'all') {
+    return `Generate a complete Creator Intelligence analysis for this topic:\n\n"${topic}"${contextInfo}\n\nReturn the FULL JSON object with all 8 keys: narrative, script, research, titles, thumbnails, series, optimization, motionPrompts. Follow the exact schemas specified.`;
+  }
+  return `Generate the "${section}" section of a Creator Intelligence analysis for this topic:\n\n"${topic}"${contextInfo}\n\nReturn ONLY the JSON for this section, following the exact schema specified.`;
 }
 
 const TONE_MAP = {

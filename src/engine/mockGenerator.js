@@ -7,12 +7,12 @@ import { generateContent } from './aiService';
 import { buildSystemPrompt, buildUserPrompt } from './prompts';
 
 // Main entry point
-export async function generateData(topic, tone, provider = null) {
+export async function generateData(topic, tone, provider = null, dnaSnippet = null) {
   // If provider is set, try real AI generation
   if (provider) {
     try {
       console.log(`Generating with AI (${provider})...`);
-      return await generateWithAI(topic, tone, provider);
+      return await generateWithAI(topic, tone, provider, dnaSnippet);
     } catch (error) {
       console.error('AI Generation failed, falling back to mock data:', error);
       // Fallback to mock data on error
@@ -24,11 +24,11 @@ export async function generateData(topic, tone, provider = null) {
 }
 
 // Single Section Generation (with fallback)
-export async function generateSection(section, topic, tone, provider = null) {
+export async function generateSection(section, topic, tone, provider = null, dnaSnippet = null, options = {}) {
   if (provider) {
     try {
       console.log(`Generating ${section} with AI (${provider})...`);
-      return await generateSectionWithAI(section, topic, tone, provider);
+      return await generateSectionWithAI(section, topic, tone, provider, dnaSnippet, options);
     } catch (error) {
       console.error(`AI Generation for ${section} failed, falling back:`, error);
     }
@@ -48,6 +48,7 @@ function generateMockSection(section, topic, tone) {
     case 'optimization': return generateOptimization(t);
     case 'motionPrompts': return generateMotionPrompts(t);
     case 'seo': return generateMockSeo(t);
+    case 'calendar': return generateMockCalendar(t);
     default: return {};
   }
 }
@@ -83,28 +84,29 @@ function generateMockSeo(topic) {
 }
 
 // Real AI Generation
-async function generateWithAI(topic, tone, provider) {
+async function generateWithAI(topic, tone, provider, dnaSnippet) {
   // Parallelize the requests for speed, or do them sequentially if rate limits are a concern.
   // For better UX, we can do them in parallel batches.
   
   // 1. Core Strategy & Script (Most important)
   const [narrative, script] = await Promise.all([
-    generateSectionWithAI('narrative', topic, tone, provider),
-    generateSectionWithAI('script', topic, tone, provider)
+    generateSectionWithAI('narrative', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('script', topic, tone, provider, dnaSnippet)
   ]);
 
   // 2. The rest (Parallel)
   const [research, titles, thumbnails, series, optimization] = await Promise.all([
-    generateSectionWithAI('research', topic, tone, provider),
-    generateSectionWithAI('titles', topic, tone, provider),
-    generateSectionWithAI('thumbnails', topic, tone, provider),
-    generateSectionWithAI('series', topic, tone, provider),
-    generateSectionWithAI('optimization', topic, tone, provider)
+    generateSectionWithAI('research', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('titles', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('thumbnails', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('series', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('optimization', topic, tone, provider, dnaSnippet),
+    generateSectionWithAI('calendar', topic, tone, provider, dnaSnippet)
   ]);
   
   // Motion prompts are derived from the script, but we can also generate them explicitly
   // or extract them. For now, let's generate them explicitly to match the schema.
-  const motionPrompts = await generateSectionWithAI('motionPrompts', topic, tone, provider);
+  const motionPrompts = await generateSectionWithAI('motionPrompts', topic, tone, provider, dnaSnippet);
 
   return {
     narrative,
@@ -114,15 +116,16 @@ async function generateWithAI(topic, tone, provider) {
     thumbnails,
     series,
     optimization,
-    motionPrompts
+    motionPrompts,
+    calendar: await generateSectionWithAI('calendar', topic, tone, provider, dnaSnippet)
   };
 }
 
-export async function generateSectionWithAI(section, topic, tone, provider) {
+export async function generateSectionWithAI(section, topic, tone, provider, dnaSnippet, options = {}) {
   const systemPrompt = buildSystemPrompt(section, tone);
-  const userPrompt = buildUserPrompt(topic, section);
+  const userPrompt = buildUserPrompt(topic, section, options);
   
-  return await generateContent(systemPrompt, userPrompt, provider);
+  return await generateContent(systemPrompt, userPrompt, provider, dnaSnippet);
 }
 
 // Mock Data Generator (Legacy/Fallback)
@@ -138,6 +141,7 @@ export function generateMockData(topic, tone = 'Analytical') {
     series: generateSeries(t),
     optimization: generateOptimization(t),
     motionPrompts: generateMotionPrompts(t),
+    calendar: generateMockCalendar(t),
   };
 }
 

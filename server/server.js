@@ -335,6 +335,30 @@ app.post('/api/generate-speech', async (req, res) => {
   }
 });
 
+// ── YouTube Automation Mock ──
+app.post('/api/youtube/publish', async (req, res) => {
+  try {
+    const { title, description, tags, videoData } = req.body;
+    console.log(`[YouTube] Incoming publish request for: ${title}`);
+    
+    // Simulate rendering/uploading delay
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      console.log(`[YouTube] Publishing progress: ${progress}%`);
+      if (progress >= 100) clearInterval(interval);
+    }, 500);
+
+    res.json({ 
+      status: 'initiated', 
+      videoId: 'mock_yt_' + Math.random().toString(36).substr(2, 9),
+      url: 'https://youtube.com/watch?v=mock'
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Publishing simulation failed' });
+  }
+});
+
 // ── Start Server ──
 app.listen(PORT, () => {
   const providers = [];

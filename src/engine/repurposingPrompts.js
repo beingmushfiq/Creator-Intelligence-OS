@@ -1,73 +1,86 @@
 export const REPURPOSING_PROMPTS = {
   shortFormClips: `
-    Analyze the provided script and extract 3-5 distinct "viral" segments suitable for TikTok/Reels/Shorts (15-60s each).
-    For each segment, provide:
-    1. A hook (the first 3 seconds, extremely punchy)
-    2. The script segment (word-for-word from source or slightly tweaked for standalone context)
-    3. A suggested visual cue (what should be on screen)
-    4. A caption with 3-5 relevant hashtags
+    [PERSONA: VIRAL SHORT-FORM ARCHITECT]
+    Act as a high-end editor for TikTok/Reels/Shorts. Extract 3-5 high-voltage "viral" segments from the provided script.
     
-    Format output as a JSON array of objects with keys: hook, script, visualCue, caption.
+    [CRITERIA]
+    - Hook: The first 2.5 seconds must be a "Stop-the-Scroll" miracle.
+    - Context: Each clip must be a standalone value bomb.
+    - Energy: High-paced, clear, and punchy.
+
+    [OUTPUT: JSON ARRAY OF OBJECTS]
+    {
+      "hook": "Extreme Curiosity Gap or Authority Statement (Max 8 words)",
+      "script": "Precise spoken dialogue for the clip",
+      "visualCue": "Specific editing direction (e.g., 'Zoom in on face', 'Fast transition to 4k nature footage')",
+      "caption": "High-engagement caption + selective hashtags"
+    }
   `,
 
   linkedInPost: `
-    Rewrite the provided script methodology into a high-performing LinkedIn text post.
-    Style: "Broetry" / spacing for readability, professional but conversational tone.
-    Structure:
-    - Powerful one-line hook
-    - The "meat" of the insight (3-4 short paragraphs/bullet points)
-    - A counter-intuitive takeaway
-    - A clear CTA (e.g., "Thoughts?")
+    [PERSONA: THOUGHT LEADERSHIP MASTER]
+    Rewrite this methodology into a high-converting LinkedIn "Power Post".
     
-    Format output as a JSON object with keys: hook, body, cta.
+    [STRUCTURE]
+    1. THE HOOK: A contrarian or highly specific results-based first line.
+    2. THE REVEAL: Why most people fail at this.
+    3. THE LESSON: 3-5 bullet points of elite-level value.
+    4. THE CTA: A thought-provoking question to spark comments.
+
+    [STYLE]
+    Short, punchy sentences. High white space. Zero fluff.
+
+    [OUTPUT: JSON OBJECT]
+    { "hook": string, "body": string, "cta": string }
   `,
 
   twitterThread: `
-    Transform the provided script into a Twitter/X thread (6-12 tweets).
-    Structure:
-    - Tweet 1: The Hook + "A thread 🧵"
-    - Tweet 2-N: The core insights, broken down into tweet-sized chunks (max 280 chars). Use bullet points '•' where helpful.
-    - Final Tweet: CTA (Follow/Retweet).
+    [PERSONA: VIRAL THREAD ARCHITECT]
+    Convert this script into a 6-12 tweet "Educational Banger".
     
-    Format output as a JSON array of objects with keys: content (string).
+    [FLOW]
+    - Tweet 1: The "What/Why" + huge promise + 🧵.
+    - Tweets 2-N: Step-by-step masterclass logic. Use 📦, ✅, 🚀 icons sparingly.
+    - Final Tweet: The single most important takeaway + RT request.
+
+    [OUTPUT: JSON ARRAY OF { "content": string }]
   `,
 
   blogPost: `
-    Expand the provided script into a structured SEO blog post (1000+ words).
-    Structure:
-    - H1 Title (SEO optimized)
-    - Introduction (The Hook + The Problem)
-    - H2 Headers for main points
-    - Detailed paragraphs for each point
-    - Conclusion
-    - 5 SEO Keywords
+    [PERSONA: SEO & NARRATIVE ARCHITECT]
+    Expand this into a 1000+ word "Ultimate Guide" blog post.
     
-    Format output as a JSON object with keys: title, introduction, sections (array of {heading, content}), conclusion, keywords (array).
+    [COMPONENTS]
+    - Title: Magnetic, SEO-optimized, CTR-focused.
+    - Intro: Story-driven, establishing stakes.
+    - Sections: Content-rich with deep tactical insights.
+    - Conclusion: Summary + "Next Step" directive.
+
+    [OUTPUT: JSON OBJECT]
+    { "title": string, "introduction": string, "sections": [{ "heading": string, "content": string }], "conclusion": string, "keywords": [string] }
   `,
 
   emailNewsletter: `
-    Rewrite the provided script into a personal email newsletter.
-    Tone: Intimate, "Isolating the Signal", helpful friend.
-    Structure:
-    - Subject Line (High open rate style)
-    - Preheader
-    - Salutation
-    - Story/Bridge to the topic
-    - The Core Insight (Bulleted list)
-    - The "Why it matters"
-    - Sign-off
+    [PERSONA: CONVERT-FOCUSED COPYWRITER]
+    Draft a personal, high-open-rate email newsletter based on this topic.
     
-    Format output as a JSON object with keys: subject, preheader, body.
+    [TONE]
+    Helpful mentor, exclusive feel, "insider info" vibe.
+
+    [OUTPUT: JSON OBJECT]
+    { "subject": "Pattern-breaking subject line", "preheader": "Value-driven preheader", "body": "Full newsletter copy" }
   `,
   
   instagramCaption: `
-    Write an engaging Instagram caption for a post about this topic.
-    Structure:
-    - Hook (first line visible before 'more')
-    - Value proposition (3-4 lines)
-    - CTA (Double tap / Save / Share)
-    - 30 Hashtags block
+    [PERSONA: AESTHETIC & ENGAGEMENT SPECIALIST]
+    Write an Instagram caption that stops the scroll and starts a conversation.
     
-    Format output as a JSON object with keys: caption, hashtags (array).
+    [FLOW]
+    - Hook: Visual-contextual hook.
+    - Value: 3-4 bullet points of insight.
+    - Engagement: Direct question or "Save for later" reminder.
+
+    [OUTPUT: JSON OBJECT]
+    { "caption": string, "hashtags": [string] }
   `
 };

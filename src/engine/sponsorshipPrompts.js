@@ -1,32 +1,42 @@
 export const SPONSORSHIP_PROMPTS = {
-  brandMatching: `
-    You are a Deal Flow Manager for a top content creator.
-    Analyze the provided TOPIC and NICHE.
-    Suggest 5 relevant brands that are known to sponsor content in this specific niche.
+  scoutDeals: (topic, script) => `
+    You are a Strategic Sponsorship Agent for high-growth creators.
+    Analyze this project topic: "${topic}".
     
-    For each brand, provide:
-    - Name: Brand name
-    - Industry: e.g., "Tech", "Finance", "Lifestyle"
-    - Fit: A 1-sentence reason why they are a good match for this specific topic.
-    - PitchAngle: A "hook" to use in an email (e.g., "Focus on their new AI feature").
-    
-    Output strictly as a JSON array of objects with keys: name, industry, fit, pitchAngle.
+    Tasks:
+    1. Identify 5-7 Brands/Companies that have high thematic alignment with this content.
+    2. For each brand, provide:
+       - Brand Name
+       - Industry
+       - "The Why": Why they should sponsor this (alignment reasoning).
+       - "Pitch Angle": A specific, unique hook for a cold email.
+       - "Estimated Tier": (e.g., $1k-5k, $5k-15k) based on industry standards.
+
+    Return as JSON:
+    {
+      "leads": [
+        { "name": string, "industry": string, "fit": string, "pitchAngle": string, "estimatedValue": string }
+      ]
+    }
   `,
 
-  pitchGenerator: `
-    You are a professional Talent Agent.
-    Write a cold outreach email to a brand.
+  negotiationAdvice: (brand, objection, topic) => `
+    You are a Master Negotiator for creators.
+    A brand ("${brand}") has raised an objection to sponsoring your content about "${topic}".
     
-    Context:
-    - Brand: {brandName}
-    - Topic context: {topic}
-    - Angle: {pitchAngle}
-    
-    Requirements:
-    - Subject Line: Catchy, professional, mentions value (not just "Sponsorship").
-    - Tone: Professional, confident, concise.
-    - Structure: Hook -> Value Proposition -> Call to Action.
-    
-    Output strictly as a JSON object with keys: subject, body.
+    OBJECTION:
+    "${objection}"
+
+    Tasks:
+    1. Analyze the hidden concern behind this objection.
+    2. Provide 3 "Counter-Points" that emphasize ROI and audience quality.
+    3. Generate a "Tactful Response" snippet (1-2 paragraphs) to send to the brand.
+
+    Return as JSON:
+    {
+      "analysis": string,
+      "counterPoints": [string],
+      "responseSnippet": string
+    }
   `
 };

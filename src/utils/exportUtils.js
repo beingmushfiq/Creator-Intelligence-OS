@@ -34,6 +34,72 @@ export function exportAsMarkdown(data, section, topic) {
   URL.revokeObjectURL(url);
 }
 
+export function exportAnalyticsAsCSV(analyticsData, topic) {
+  let csv = 'Metric,Value,Date\n';
+  
+  // Basic KPIs
+  csv += `Total Revenue,${analyticsData.totalRevenue || 0},${new Date().toLocaleDateString()}\n`;
+  csv += `Active Subscribers,${analyticsData.subscribers || 0},${new Date().toLocaleDateString()}\n`;
+  csv += `Total Views,${analyticsData.views || 0},${new Date().toLocaleDateString()}\n`;
+  
+  // Engagement Data
+  if (analyticsData.engagementRate) {
+    csv += `Engagement Rate,${analyticsData.engagementRate}%,\n`;
+  }
+  
+  // Platform Split
+  if (analyticsData.platformSplit) {
+    csv += '\nPlatform Split,Percentage\n';
+    analyticsData.platformSplit.forEach(p => {
+      csv += `${p.name},${p.value}%\n`;
+    });
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sanitizeFilename(topic)}_growth_report.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+export function exportMasterReport(data, topic) {
+  let content = `# CREATOR INTELLIGENCE MASTER REPORT\n\n`;
+  content += `**Topic:** ${topic}\n`;
+  content += `**Generated:** ${new Date().toLocaleString()}\n`;
+  content += `**Author:** Creator Intelligence OS\n`;
+  content += `\n---\n\n`;
+
+  // Summary Table of Contents
+  content += `## Table of Contents\n`;
+  content += `1. [Narrative Intelligence](#narrative-intelligence)\n`;
+  content += `2. [Deep Analysis & Research](#deep-analysis--research)\n`;
+  content += `3. [Master Script](#master-script)\n`;
+  content += `4. [Title Psychology](#title-psychology)\n`;
+  content += `5. [Thumbnail Strategy](#thumbnail-strategy)\n`;
+  content += `\n---\n\n`;
+
+  // Concatenate Sections
+  if (data.narrative) content += formatNarrativeMarkdown(data.narrative) + '\n\n---\n\n';
+  if (data.research) content += formatResearchMarkdown(data.research) + '\n\n---\n\n';
+  if (data.script) content += formatScriptMarkdown(data.script) + '\n\n---\n\n';
+  if (data.titles) content += formatTitlesMarkdown(data.titles) + '\n\n---\n\n';
+  if (data.thumbnails) content += formatThumbnailsMarkdown(data.thumbnails) + '\n\n---\n\n';
+
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${sanitizeFilename(topic)}_MASTER_REPORT.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── Text Export Functions ──
 
 export function exportAsText(data, section, topic) {
