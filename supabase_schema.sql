@@ -40,6 +40,13 @@ create table if not exists projects (
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Ensure team_id exists if table was created previously
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='projects' AND column_name='team_id') THEN
+    ALTER TABLE projects ADD COLUMN team_id uuid REFERENCES teams ON DELETE SET NULL;
+  END IF;
+END $$;
+
 create table if not exists generations (
   id uuid default uuid_generate_v4() primary key,
   project_id uuid references projects on delete cascade not null,
@@ -72,6 +79,13 @@ create table if not exists comments (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- Ensure team_id exists if table was created previously
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='comments' AND column_name='team_id') THEN
+    ALTER TABLE comments ADD COLUMN team_id uuid REFERENCES teams ON DELETE CASCADE;
+  END IF;
+END $$;
+
 create table if not exists activity_log (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references auth.users not null,
@@ -82,6 +96,13 @@ create table if not exists activity_log (
   metadata jsonb default '{}'::jsonb,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure team_id exists if table was created previously
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='activity_log' AND column_name='team_id') THEN
+    ALTER TABLE activity_log ADD COLUMN team_id uuid REFERENCES teams ON DELETE CASCADE;
+  END IF;
+END $$;
 
 -- tasks must be created BEFORE RLS is enabled on it
 create table if not exists tasks (
@@ -98,6 +119,13 @@ create table if not exists tasks (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- Ensure team_id exists if table was created previously
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tasks' AND column_name='team_id') THEN
+    ALTER TABLE tasks ADD COLUMN team_id uuid REFERENCES teams ON DELETE CASCADE;
+  END IF;
+END $$;
 
 
 -- =============================================

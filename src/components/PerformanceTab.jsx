@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   TrendingUp, 
@@ -6,207 +6,223 @@ import {
   AlertTriangle, 
   RefreshCw, 
   Flame, 
-  Eye, 
+  Gauge, 
+  ArrowUp, 
+  ArrowDown, 
   Target, 
-  ArrowRight,
+  Compass,
   ShieldCheck,
-  BarChart3,
-  Search
+  Rocket
 } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { useToast } from '../context/ToastContext';
-import { getPerformanceProjection } from '../engine/aiService';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { ExportButton } from './ui/ExportButton.jsx';
 
 export default function PerformanceTab() {
   const { topic, data, setData, currentProjectId } = useCreator();
   const { addToast } = useToast();
   
-  const [loading, setLoading] = useState(false);
-  const p = data?.performance;
+  const [isGenerating, setIsGenerating] = useState(false);
+  const performance = data?.performance;
 
-  const handleRunProjection = async () => {
-    if (!topic || !data?.script) {
-      addToast('info', 'Generate a master script first to run performance lab');
+  const fetchPerformanceMetadata = async () => {
+    if (!topic || isGenerating) {
+      addToast('info', 'Topic is required to run performance lab');
       return;
     }
-    setLoading(true);
+    setIsGenerating(true);
     try {
+      const { getPerformanceProjection } = await import('../engine/aiService.js');
       const result = await getPerformanceProjection(topic, data);
       setData(prev => ({ ...prev, performance: result }));
       addToast('success', 'Performance simulation complete');
     } catch (err) {
       addToast('error', 'Simulation failed');
     } finally {
-      setLoading(false);
+      setIsGenerating(false);
     }
   };
 
+  useEffect(() => {
+    if (topic && !performance) {
+      fetchPerformanceMetadata();
+    }
+  }, [topic, performance]);
+
   if (!currentProjectId) {
     return (
-      <div className="tab-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
-        <div style={{ maxWidth: 400 }}>
-          <TrendingUp size={48} color="var(--accent-primary)" style={{ marginBottom: 20 }} />
-          <h2 style={{ marginBottom: 12 }}>Performance Prediction</h2>
+      <div className="tab-content center-content" style={{ height: '60vh' }}>
+        <div className="glass glass-hover" style={{ maxWidth: 440, padding: 48, textAlign: 'center', borderRadius: 32 }}>
+          <TrendingUp size={48} color="var(--accent-primary)" style={{ marginBottom: 20, margin: '0 auto' }} />
+          <h2 style={{ marginBottom: 12 }}>Initialize Project</h2>
           <p style={{ color: 'var(--text-tertiary)', marginBottom: 24 }}>
-            Analyze the viral potential of your project. Identify retention hazards and optimize for maximum reach.
+            Please select or create a project to access the Performance Intelligence Hub.
           </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <div>
-          <h2 className="tab-title text-gradient">Viral Vault</h2>
-          <p className="tab-subtitle">AI-driven virality prediction & retention lab</p>
+  if (isGenerating) return (
+     <div className="tab-content center-content" style={{ height: '60vh' }}>
+        <div style={{ textAlign: 'center' }} className="stagger-children">
+           <motion.div 
+             animate={{ rotate: 360 }}
+             transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+             style={{ width: 64, height: 64, margin: '0 auto 24px', borderRadius: '20px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+           >
+             <Gauge size={32} color="var(--accent-primary)" />
+           </motion.div>
+           <h3 className="text-gradient-aurora" style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 8 }}>Analyzing Velocity</h3>
+           <p style={{ color: 'var(--text-tertiary)', fontSize: '1rem' }}>Processing historical engagement and strategic hazards...</p>
         </div>
-        <button 
-          className="btn-primary" 
-          onClick={handleRunProjection} 
-          disabled={loading}
-        >
-          {loading ? <RefreshCw className="animate-spin" size={16} /> : <Zap size={16} />}
-          <span>{p ? 'Rerun Simulation' : 'Predict Performance'}</span>
+     </div>
+  );
+
+  if (!performance) return (
+    <div className="tab-content center-content" style={{ height: '60vh' }}>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="glass glass-hover" 
+        style={{ maxWidth: 540, padding: 48, textAlign: 'center', borderRadius: 32 }}
+      >
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Gauge size={40} />
+        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Performance Engine</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: 32, fontSize: '1rem', lineHeight: 1.6 }}>Optimize your creative output. Measure strategy velocity, map hazardous trends, and unlock elite moves for market dominance.</p>
+        <button onClick={fetchPerformanceMetadata} className="btn-primary" style={{ padding: '16px 32px', fontSize: '1rem' }}>
+          <Zap size={20} /> <span>Ignite Performance Hub</span>
         </button>
+      </motion.div>
+    </div>
+  );
+
+  return (
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Performance Intelligence</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Analyzing output efficiency & strategic hazards for {topic}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <ExportButton section="performance" data={performance} />
+          <button onClick={fetchPerformanceMetadata} className="btn-secondary" style={{ width: 48, height: 48, padding: 0 }}><RefreshCw size={18} /></button>
+        </div>
       </div>
 
-      {!p ? (
-        <div style={{ 
-          display: 'flex', flexDirection: 'column', alignItems: 'center', 
-          justifyContent: 'center', minHeight: '50vh', background: 'var(--bg-secondary)', 
-          borderRadius: 16, border: '1px dashed var(--border-subtle)', margin: '0 20px'
-        }}>
-          <BarChart3 size={40} color="var(--text-tertiary)" style={{ marginBottom: 16, opacity: 0.5 }} />
-          <p style={{ color: 'var(--text-tertiary)' }}>No performance projection generated yet.</p>
-          <button className="btn-ghost" onClick={handleRunProjection} style={{ marginTop: 12 }}>
-            Initiate Viral Projection
-          </button>
-        </div>
-      ) : (
-        <div className="card-grid stagger-children">
+      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        
+        {/* Metric Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
           
-          {/* Main Velocity Meter */}
-          <div className="card card-full" style={{ padding: '32px', background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%)', border: '1px solid var(--accent-secondary)20' }}>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 40, alignItems: 'center' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ position: 'relative', width: 140, height: 140, margin: '0 auto 16px' }}>
-                    <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                      <path
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="var(--bg-tertiary)"
-                        strokeWidth="3"
-                        strokeDasharray="100, 100"
-                      />
-                      <motion.path
-                        initial={{ strokeDasharray: "0, 100" }}
-                        animate={{ strokeDasharray: `${p.velocityScore}, 100` }}
-                        transition={{ duration: 1.5, ease: "easeOut" }}
-                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                        fill="none"
-                        stroke="var(--accent-secondary)"
-                        strokeWidth="3"
-                      />
-                    </svg>
-                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-primary)' }}>{p.velocityScore}</div>
-                      <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>Viral Score</div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-                    <div style={{ fontSize: '0.75rem', padding: '4px 8px', background: 'var(--accent-secondary)10', color: 'var(--accent-secondary)', borderRadius: 6, fontWeight: 700 }}>
-                       Hook: {p.hookStrength}%
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ flex: 1 }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                      <Flame size={20} color="var(--accent-secondary)" />
-                      <h3 style={{ fontWeight: 800, fontSize: '1.2rem' }}>Performance Projection</h3>
-                   </div>
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Reach Potential</div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{p.projections.reach}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Est. Engagement</div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{p.projections.engagement}</div>
-                      </div>
-                      <div style={{ gridColumn: 'span 2' }}>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Predicted Sentiment</div>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{p.projections.sentiment}</div>
-                      </div>
-                   </div>
-                </div>
-             </div>
-          </div>
-
-          {/* Retention Hazards */}
-          <div className="card" style={{ gridColumn: 'span 2' }}>
-            <div className="card-header">
-              <div className="card-title-group">
-                <div className="card-icon" style={{ color: '#ef4444' }}><AlertTriangle size={16} /></div>
-                <h3 className="card-title">Retention Hazard Map</h3>
+           {/* Velocity Meter */}
+           <div className="glass" style={{ padding: 40, borderRadius: 32, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32, alignSelf: 'flex-start' }}>
+                 <div className="glow-border" style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Gauge size={20} />
+                 </div>
+                 <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Market Velocity</h3>
               </div>
-            </div>
-            <div className="card-body">
+              
+              <div style={{ position: 'relative', width: 220, height: 110, marginBottom: 24 }}>
+                 {/* Meter Background */}
+                 <div style={{ position: 'absolute', bottom: 0, width: '100%', height: 220, borderRadius: '110px 110px 0 0', background: 'var(--bg-tertiary)', border: '1px solid var(--border-medium)', overflow: 'hidden' }}>
+                    <motion.div 
+                       initial={{ rotate: -90 }}
+                       animate={{ rotate: (performance.velocity.current / 100) * 180 - 90 }}
+                       transition={{ duration: 1.5, ease: 'backOut' }}
+                       style={{ 
+                          position: 'absolute', bottom: 0, width: '100%', height: '100%', 
+                          background: 'var(--gradient-primary)', originY: '100%',
+                          maskImage: 'radial-gradient(circle at 50% 100%, transparent 60%, black 61%)'
+                       }}
+                    />
+                 </div>
+                 {/* Value Overlay */}
+                 <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1, letterSpacing: '-0.05em' }} className="text-gradient">
+                       {performance.velocity.current}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>SCORE</div>
+                 </div>
+              </div>
+
+              <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '0 20px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ArrowDown size={14} color="var(--accent-danger)" /> Low</div>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><ArrowUp size={14} color="var(--accent-success)" /> High</div>
+              </div>
+
+              <p style={{ marginTop: 24, fontSize: '0.9rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+                 Target Velocity: <span style={{ color: 'var(--accent-primary)', fontWeight: 800 }}>{performance.velocity.target}</span>. 
+                 {performance.velocity.current >= performance.velocity.target ? ' Surplus efficiency detected.' : ' Opportunity for acceleration.'}
+              </p>
+           </div>
+
+           {/* Hazard Maps */}
+           <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
+                 <div className="glow-border" style={{ width: 40, height: 40, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <AlertTriangle size={20} />
+                 </div>
+                 <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Hazard Protocol</h3>
+              </div>
+              
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                {p.hazards.map((h, i) => (
-                  <div key={i} style={{ padding: 16, background: 'var(--bg-tertiary)', borderRadius: 12, border: '1px solid var(--border-subtle)', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                       <span className="badge" style={{ 
-                         background: h.severity === 'High' ? 'rgba(239, 68, 68, 0.1)' : h.severity === 'Medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(34, 197, 94, 0.1)',
-                         color: h.severity === 'High' ? '#ef4444' : h.severity === 'Medium' ? '#f59e0b' : '#22c55e',
-                         borderColor: h.severity === 'High' ? '#ef4444' : h.severity === 'Medium' ? '#f59e0b' : '#22c55e',
-                         fontSize: '0.6rem'
-                       }}>
-                         {h.severity} Risk
-                       </span>
+                 {performance.hazards.map((hazard, i) => (
+                    <div key={i} className="glass glass-hover" style={{ padding: 20, borderRadius: 20, background: 'rgba(244, 63, 94, 0.03)', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
+                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                          <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-danger)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{hazard.risk} RISK</span>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{hazard.title}</h4>
+                       </div>
+                       <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{hazard.mitigation}</p>
                     </div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ color: 'var(--text-tertiary)' }}>At:</span> {h.location}
-                    </div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 12 }}>{h.reason}</p>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px', background: 'var(--bg-primary)', borderRadius: 8, fontSize: '0.8rem' }}>
-                       <ShieldCheck size={14} color="var(--accent-success)" style={{ marginTop: 2, flexShrink: 0 }} />
-                       <div style={{ color: 'var(--text-primary)' }}><span style={{ fontWeight: 700, color: 'var(--accent-success)' }}>Fix:</span> {h.fix}</div>
-                    </div>
-                  </div>
-                ))}
+                 ))}
               </div>
-            </div>
-          </div>
-
-          {/* Viral Catalysts */}
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title-group">
-                <div className="card-icon" style={{ color: 'var(--accent-primary)' }}><Flame size={16} /></div>
-                <h3 className="card-title">Viral Catalysts</h3>
-              </div>
-            </div>
-            <div className="card-body">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {p.catalysts.map((c, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--accent-primary)20', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{i+1}</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{c}</p>
-                  </div>
-                ))}
-              </div>
-              <div style={{ marginTop: 24, padding: 16, background: 'var(--bg-tertiary)', borderRadius: 12, textAlign: 'center', border: '1px dashed var(--border-subtle)' }}>
-                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 8 }}>Ready to film?</p>
-                 <button className="btn-mini" style={{ width: '100%' }}>Finalize Pre-Prod</button>
-              </div>
-            </div>
-          </div>
-
+           </div>
         </div>
-      )}
+
+        {/* Elite Strategic Moves */}
+        <div className="glass" style={{ padding: 56, borderRadius: 32, position: 'relative' }}>
+           <div style={{ position: 'absolute', top: 40, right: 40 }}>
+              <Zap size={64} style={{ color: 'var(--accent-primary)', opacity: 0.05 }} />
+           </div>
+           
+           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 48 }}>
+              <div className="glow-border" style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--bg-tertiary)', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <Compass size={28} />
+              </div>
+              <div>
+                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900 }}>Elite Strategic Protocol</h3>
+                 <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)' }}>Advanced tactical maneuvers for market dominance</p>
+              </div>
+           </div>
+
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32 }}>
+              {performance.strategicMoves.map((move, i) => (
+                 <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="glass glass-hover"
+                    style={{ padding: 32, borderRadius: 24, border: '1px solid var(--border-medium)' }}
+                 >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: i % 2 === 0 ? 'var(--accent-primary)' : 'var(--accent-secondary)', boxShadow: `0 0 10px ${i % 2 === 0 ? 'var(--accent-primary)' : 'var(--accent-secondary)'}` }} />
+                       <h4 style={{ fontSize: '1.25rem', fontWeight: 800 }}>{move.move}</h4>
+                    </div>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>{move.impact}</p>
+                    <div style={{ padding: '16px 20px', background: 'var(--bg-tertiary)', borderRadius: 16, border: '1px solid var(--border-medium)' }}>
+                       <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-success)', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>Implementation</span>
+                       <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>{move.impl}</span>
+                    </div>
+                 </motion.div>
+              ))}
+           </div>
+        </div>
+      </div>
     </div>
   );
 }

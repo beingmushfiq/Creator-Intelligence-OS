@@ -197,19 +197,25 @@ const TAB_COMPONENTS = {
 // Loading fallback for lazy components
 function TabLoader() {
   return (
-    <div className="center-content" style={{ height: '50vh', gap: 16 }}>
+    <div className="center-content stagger-children" style={{ height: '60vh', gap: 24 }}>
        <motion.div 
-         animate={{ rotate: 360 }}
-         transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-         style={{ width: 40, height: 40, border: '4px solid var(--accent-primary)20', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}
-       />
-       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Synchronizing</span>
+         className="glow-border"
+         style={{ width: 56, height: 56, borderRadius: '16px', background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+       >
+         <motion.div
+           animate={{ rotate: 360 }}
+           transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+           style={{ width: 24, height: 24, border: '3px solid var(--accent-primary)20', borderTopColor: 'var(--accent-primary)', borderRadius: '50%' }}
+         />
+       </motion.div>
+       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
+          <span style={{ fontSize: '0.85rem', fontWeight: 900, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.15em' }}>Synchronizing Engine</span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>Fetching strategic intelligence...</span>
        </div>
     </div>
   );
 }
+
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -358,11 +364,12 @@ function AppContent() {
 
   return (
     <div className="app-layout">
+      <div className="app-bg" />
       {/* Global Progress Bar */}
       {creatorLoading && <div className="global-loading-bar" />}
       
-      {/* ── Mobile Top Bar (Only visible < 768px) ── */}
-      <div className="mobile-topbar">
+      {/* ── Mobile Top Bar ── */}
+      <div className="mobile-topbar glass-strong">
         <button
           className="mobile-menu-btn"
           onClick={() => setMobileOpen(true)}
@@ -371,24 +378,25 @@ function AppContent() {
           <Menu size={20} />
         </button>
         <div className="sidebar-logo" style={{ flex: 1, justifyContent: 'center' }}>
-        <div 
-          className="flex items-center gap-3 cursor-pointer" 
-          onClick={() => {
-            setActiveTab('home');
-            setMobileOpen(false);
-          }}
-        >
-          <div className="sidebar-logo-icon"><Zap size={16} color="#fff" /></div>
-          <div className="sidebar-logo-text">Creator<span className="text-gradient"> Intelligence</span></div>
-        </div>
+          <div 
+            className="flex items-center gap-3 cursor-pointer" 
+            onClick={() => {
+              setActiveTab('home');
+              setMobileOpen(false);
+            }}
+          >
+            <div className="sidebar-logo-icon glow-border"><Zap size={16} color="#fff" /></div>
+            <div className="sidebar-logo-text">Creator<span className="text-gradient"> Intelligence</span></div>
+          </div>
         </div>
         <button
           onClick={() => setShowComments(!showComments)}
-          style={{ position: 'relative', width: 40, height: 40, borderRadius: '50%', background: 'var(--accent-primary)', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+          className="btn-icon"
+          style={{ position: 'relative', width: 40, height: 40, borderRadius: '12px' }}
         >
           <MessageSquare size={18} />
           {comments[activeTab]?.length > 0 && (
-            <div style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', fontSize: '0.65rem', fontWeight: 700, minWidth: 16, height: 16, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--bg-primary)' }}>
+            <div className="notification-badge">
               {comments[activeTab].length}
             </div>
           )}
@@ -401,7 +409,7 @@ function AppContent() {
       )}
 
       {/* Sidebar */}
-      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+      <aside className={`sidebar glass-strong ${mobileOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
           <div 
             className="sidebar-logo cursor-pointer hover:opacity-80 transition-opacity" 
@@ -411,358 +419,243 @@ function AppContent() {
             }}
             title="Go to Home"
           >
-            <div className="sidebar-logo-icon">
+            <div className="sidebar-logo-icon glow-border">
               <Zap size={18} color="#fff" />
             </div>
             <div>
-              <div className="sidebar-logo-text">Creator<span className="text-gradient"> Intelligence</span></div>
+              <div className="sidebar-logo-text">Creator<span className="text-gradient-aurora"> Intelligence</span></div>
               <div className="sidebar-logo-sub">OS v1.0</div>
             </div>
           </div>
-          <div style={{ marginTop: 16 }}>
+          <div style={{ marginTop: 24 }}>
             <Suspense fallback={<div style={{ height: 40 }} />}>
               <TeamSwitcher />
             </Suspense>
           </div>
         </div>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav custom-scrollbar">
+
           {/* ── Neural Intelligence Hub ── HERO CARD ── */}
-          <div style={{ padding: '0 10px 20px 10px' }}>
+          <div style={{ padding: '0 12px 24px 12px' }}>
             <motion.button
               onClick={() => setShowCoach(!showCoach)}
               whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.98 }}
+              className="glass glass-hover"
               style={{
                 width: '100%',
                 textAlign: 'left',
-                background: showCoach
-                  ? 'linear-gradient(135deg, rgba(124,92,252,0.18) 0%, rgba(99,179,237,0.08) 100%)'
-                  : 'linear-gradient(135deg, rgba(124,92,252,0.06) 0%, rgba(0,0,0,0.2) 100%)',
-                border: `1px solid ${showCoach ? 'rgba(124,92,252,0.5)' : 'rgba(124,92,252,0.15)'}`,
-                borderRadius: 20,
-                padding: '18px 16px 16px',
+                border: `1px solid ${showCoach ? 'var(--accent-primary)' : 'var(--border-medium)'}`,
+                borderRadius: 24,
+                padding: '20px 16px',
                 position: 'relative',
                 overflow: 'hidden',
                 cursor: 'pointer',
-                transition: 'all 0.4s cubic-bezier(0.16,1,0.3,1)',
-                boxShadow: showCoach
-                  ? '0 0 40px rgba(124,92,252,0.2), inset 0 1px 0 rgba(255,255,255,0.06)'
-                  : '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)',
+                boxShadow: showCoach ? 'var(--shadow-glow)' : 'var(--shadow-md)',
               }}
             >
-              {/* Animated scan-line overlay */}
-              <motion.div
-                animate={{ y: ['-100%', '200%'] }}
-                transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 2 }}
-                style={{
-                  position: 'absolute', left: 0, right: 0, height: '30%',
-                  background: 'linear-gradient(180deg, transparent, rgba(124,92,252,0.04), transparent)',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              {/* Background neural mesh */}
-              <div style={{
-                position: 'absolute', inset: 0, opacity: 0.04,
-                backgroundImage: `linear-gradient(rgba(124,92,252,1) 1px, transparent 1px), linear-gradient(90deg, rgba(124,92,252,1) 1px, transparent 1px)`,
-                backgroundSize: '16px 16px',
-                pointerEvents: 'none',
-              }} />
-
               {/* Top row: label + live badge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <span style={{
-                  fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em',
-                  textTransform: 'uppercase', color: 'var(--accent-primary)', opacity: 0.8
-                }}>
-                  Neural Engine
-                </span>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '2px 8px', borderRadius: 100,
-                  background: showCoach ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${showCoach ? 'rgba(124,92,252,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                }}>
-                  <motion.div
-                    animate={{ opacity: showCoach ? [1, 0.3, 1] : [0.3, 1, 0.3] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    style={{ width: 5, height: 5, borderRadius: '50%', background: showCoach ? 'var(--accent-primary)' : '#22c55e' }}
-                  />
-                  <span style={{ fontSize: '0.55rem', fontWeight: 800, color: showCoach ? 'var(--accent-primary)' : 'rgba(34,197,94,0.9)', letterSpacing: '0.1em' }}>
-                    {showCoach ? 'ACTIVE' : 'READY'}
-                  </span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--accent-primary)', opacity: 0.8 }}>Neural Engine</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 100, background: showCoach ? 'rgba(124,92,252,0.1)' : 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 6, height: 6, borderRadius: '50%', background: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)' }} />
+                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)', letterSpacing: '0.05em' }}>{showCoach ? 'ACTIVE' : 'READY'}</span>
                 </div>
               </div>
 
               {/* Centre: Brain icon with pulse ring + title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
-                {/* Animated icon cluster */}
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  {/* Outer pulse ring */}
-                  <motion.div
-                    animate={{ scale: [1, 1.3, 1], opacity: [0.4, 0, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    style={{
-                      position: 'absolute', inset: -6,
-                      borderRadius: '50%',
-                      border: '1px solid var(--accent-primary)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  {/* Inner icon box */}
-                  <div style={{
-                    width: 44, height: 44, borderRadius: 14,
-                    background: showCoach
-                      ? 'var(--accent-primary)'
-                      : 'linear-gradient(135deg, rgba(124,92,252,0.15), rgba(124,92,252,0.05))',
-                    border: `1px solid ${showCoach ? 'var(--accent-primary)' : 'rgba(124,92,252,0.3)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: showCoach ? '#fff' : 'var(--accent-primary)',
-                    boxShadow: showCoach ? '0 0 20px rgba(124,92,252,0.5)' : '0 0 10px rgba(124,92,252,0.1)',
-                    transition: 'all 0.4s ease',
-                  }}>
-                    <Brain size={22} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ position: 'relative' }}>
+                  <div className="glow-border" style={{ width: 48, height: 48, borderRadius: 16, background: showCoach ? 'var(--gradient-primary)' : 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    <Brain size={24} />
                   </div>
                 </div>
-
-                {/* Title block */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontSize: '0.85rem', fontWeight: 900, letterSpacing: '-0.02em',
-                    color: 'var(--text-primary)', lineHeight: 1.2, marginBottom: 3,
-                    fontFamily: 'var(--font-display)',
-                  }}>
-                    Intelligence Hub
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 500, letterSpacing: '0.02em' }}>
-                    {showCoach ? 'Daemon running...' : 'AI-powered creator audit'}
-                  </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>Intelligence Hub</div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>AI Creator Audit</div>
                 </div>
-
-                {/* Score chip */}
-                {data?.coachScore && (
-                  <div style={{
-                    padding: '4px 8px', borderRadius: 8,
-                    background: 'rgba(124,92,252,0.1)',
-                    border: '1px solid rgba(124,92,252,0.2)',
-                    fontSize: '0.72rem', fontWeight: 900,
-                    color: 'var(--accent-primary)',
-                    fontFamily: 'var(--font-mono)',
-                    flexShrink: 0,
-                  }}>
-                    {data.coachScore}%
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom: micro stat bar */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '9px 10px', borderRadius: 10,
-                background: 'rgba(0,0,0,0.2)',
-                border: '1px solid rgba(255,255,255,0.04)',
-              }}>
-                <Sparkles size={11} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', flex: 1 }}>
-                  {showCoach ? 'Click to collapse panel' : 'Launch Neural Audit →'}
-                </span>
-                <ChevronRight size={11} style={{
-                  color: 'var(--accent-primary)',
-                  transform: showCoach ? 'rotate(180deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.3s ease',
-                  flexShrink: 0,
-                }} />
               </div>
             </motion.button>
           </div>
 
+          <div style={{ padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {TABS.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <motion.div
+                  key={tab.id}
+                  whileHover={{ x: 4 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`nav-item ${isActive ? 'active' : ''}`}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMobileOpen(false);
+                  }}
+                  style={{ borderRadius: '12px', padding: '12px 16px' }}
+                >
+                  <Icon size={20} className="nav-icon" />
+                  <span style={{ fontSize: '0.9rem', fontWeight: isActive ? 700 : 500 }}>{tab.label}</span>
+                  {isActive && (
+                    <motion.div 
+                      layoutId="active-indicator"
+                      className="active-dot"
+                      style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-primary)', marginLeft: 'auto', boxShadow: 'var(--shadow-glow)' }} 
+                    />
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
 
-          {TABS.map(tab => {
-            const Icon = tab.icon;
-            return (
-              <div
-                key={tab.id}
-                className={`nav-item ${activeTab === tab.id ? 'active' : ''}`}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setMobileOpen(false);
-                }}
-              >
-                <Icon size={18} className="nav-icon" />
-                <span>{tab.label}</span>
-                {data && activeTab === tab.id && (
-                  <div style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: 'var(--accent-success)',
-                    marginLeft: 'auto',
-                    boxShadow: '0 0 8px var(--accent-success)',
-                  }} />
-                )}
-              </div>
-            );
-          })}
         </nav>
         <div className="sidebar-footer">
           {/* New Project Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={handleNewProject}
-            className="card"
+            className="glass glass-hover"
             style={{
               width: '100%',
-              padding: '14px',
-              marginBottom: '16px',
+              padding: '16px',
+              marginBottom: '12px',
               cursor: 'pointer',
-              border: '1px solid var(--border-subtle)',
-              transition: 'all 0.2s ease',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '16px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
+                width: 40,
+                height: 40,
+                borderRadius: 12,
                 background: 'var(--bg-tertiary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <Plus size={18} className="text-[var(--accent-primary)]" />
+                <Plus size={20} style={{ color: 'var(--accent-primary)' }} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 2 }}>
-                  New Project
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                  Clear current session
-                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 2 }}>New Project</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Reset session</div>
               </div>
             </div>
-          </button>
+          </motion.button>
 
           {/* Settings Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               setActiveTab('settings');
               setMobileOpen(false);
             }}
-            className="card"
+            className="glass glass-hover"
             style={{
               width: '100%',
-              padding: '14px',
+              padding: '16px',
               marginBottom: '16px',
               cursor: 'pointer',
-              border: '1px solid var(--border-subtle)',
-              transition: 'all 0.2s ease',
+              border: '1px solid var(--border-medium)',
+              borderRadius: '16px',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{
-                width: 36,
-                height: 36,
-                borderRadius: 8,
+                width: 40,
+                height: 40,
+                borderRadius: 12,
                 background: 'var(--bg-tertiary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <Settings size={18} className="text-[var(--accent-secondary)]" />
+                <Settings size={20} style={{ color: 'var(--accent-secondary)' }} />
               </div>
               <div style={{ flex: 1, textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 2 }}>
-                  Settings
-                </div>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                  AI & Account
-                </div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: 2 }}>Settings</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>AI & Account</div>
               </div>
-              <div className={`w-2 h-2 rounded-full ${
-                backendReady ? 'bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.4)]' : 'bg-red-500'
-              }`} />
+              <div className={`w-2.5 h-2.5 rounded-full ${backendReady ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'}`} />
             </div>
-          </button>
+          </motion.button>
           
           <div 
-            style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', lineHeight: 1.5, cursor: 'pointer' }}
-            onClick={() => {
-              setActiveTab('home');
-              setMobileOpen(false);
-            }}
+            style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', padding: '0 8px', textAlign: 'center' }}
           >
-            <div style={{ fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 2 }}>Creator Intelligence OS</div>
-            Built for creators who think in systems.
+            <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>CREATOR INTELLIGENCE OS</span>
+            <br />Built for the systems-driven creator.
           </div>
         </div>
       </aside>
 
       <main className="main-content">
-        {/* Elite Command Header (Desktop Only) */}
-        <div className="hidden md:flex items-center justify-end px-12 py-6 relative z-[990]">
+        {/* Elite Command Header */}
+        <div className="hidden md:flex items-center justify-end px-8 py-6 relative z-[990]">
            <motion.button
              onClick={toggleTheme}
              whileHover={{ scale: 1.05 }}
              whileTap={{ scale: 0.95 }}
-             className="glass-strong w-12 h-12 flex items-center justify-center relative overflow-hidden group border-white/5 shadow-2xl"
+             className="glass glass-hover w-12 h-12 flex items-center justify-center relative overflow-hidden shadow-xl"
              style={{
-               background: theme === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-               borderRadius: 'var(--radius-lg)',
+               borderRadius: '14px',
+               border: '1px solid var(--border-medium)',
              }}
-             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
            >
              <AnimatePresence mode="wait">
                <motion.div
                  key={theme}
-                 initial={{ y: 20, opacity: 0, rotate: -45 }}
-                 animate={{ y: 0, opacity: 1, rotate: 0 }}
-                 exit={{ y: -20, opacity: 0, rotate: 45 }}
-                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                 initial={{ y: 15, opacity: 0, scale: 0.6 }}
+                 animate={{ y: 0, opacity: 1, scale: 1 }}
+                 exit={{ y: -15, opacity: 0, scale: 0.6 }}
+                 transition={{ duration: 0.3, ease: 'backOut' }}
                  className="text-[var(--accent-primary)]"
                >
                  {theme === 'dark' ? <Sparkles size={20} /> : <Zap size={20} />}
                </motion.div>
              </AnimatePresence>
-             <div className="absolute inset-0 bg-gradient-to-br from-[var(--accent-primary)]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
            </motion.button>
         </div>
 
         {/* Global Team Chat FAB (Desktop Only) */}
         <div className="hidden md:block" style={{
           position: 'fixed',
-          bottom: 24,
-          right: 24,
+          bottom: 32,
+          right: 32,
           zIndex: 1000,
         }}>
           <motion.button
             onClick={() => setShowComments(!showComments)}
             whileHover={{ scale: 1.05, y: -2 }}
             whileTap={{ scale: 0.95 }}
-            className={`glass-strong relative ${showComments ? 'active-glow border-[var(--accent-primary)]' : 'border-white/5'}`}
+            className={`glass glass-hover ${showComments ? 'active-glow border-[var(--accent-primary)]' : ''}`}
             style={{
-              width: 56,
-              height: 56,
-              borderRadius: 'var(--radius-xl)',
+              width: 60,
+              height: 60,
+              borderRadius: '20px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              background: showComments ? 'rgba(124, 92, 252, 0.1)' : 'var(--bg-secondary)',
-              boxShadow: showComments ? 'var(--shadow-glow-strong)' : 'var(--shadow-lg)',
+              boxShadow: showComments ? 'var(--shadow-glow)' : 'var(--shadow-lg)',
               cursor: 'pointer',
-              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+              border: `1px solid ${showComments ? 'var(--accent-primary)' : 'var(--border-medium)'}`,
             }}
           >
-            <MessageSquare size={24} className={showComments ? 'text-[var(--accent-primary)]' : 'text-white/40'} />
+            <MessageSquare size={26} style={{ color: showComments ? 'var(--accent-primary)' : 'var(--text-tertiary)' }} />
             
             {comments[activeTab]?.length > 0 && (
-              <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 rounded-full border-2 border-[var(--bg-secondary)] flex items-center justify-center text-[10px] font-black text-white">
+              <div className="notification-badge" style={{ top: -6, right: -6 }}>
                 {comments[activeTab].length}
               </div>
             )}
           </motion.button>
         </div>
 
-        {activeTab !== 'settings' && <TopicInput />}
+        <TopicInput />
+
 
         {/* Content Actions Strip */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', padding: '0 20px 20px' }}>
