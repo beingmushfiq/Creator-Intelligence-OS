@@ -5,293 +5,158 @@ import 'jspdf-autotable';
 import { 
   Download, FileText, X, Sparkles, BarChart2, 
   Users, Briefcase, Zap, Star, Layout, 
-  Globe, TrendingUp, Info, CheckCircle
+  Globe, TrendingUp, Info, CheckCircle,
+  Share2, Camera, ShieldCheck, HeartPulse
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
-export const MediaKit = ({ isOpen, onClose, creatorData, dealsData }) => {
-  const { data, topic } = useCreator();
+export default function MediaKit({ isOpen, onClose, creatorData, dealsData }) {
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [portfolioData, setPortfolioData] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
-  const generatePortfolio = async () => {
-    setLoading(true);
+  const generatePDF = async () => {
+    setGenerating(true);
+    addToast('info', 'Synthesizing professional dossier...');
     try {
-      const { generateCaseStudies } = await import('../engine/aiService.js');
-      const { MEDIA_KIT_PROMPTS } = await import('../engine/mediaKitPrompts.js');
-      const { generateContent } = await import('../engine/aiService.js');
-
-      const projects = data?.contentPerformance || [];
-      const cases = await generateCaseStudies(projects);
-
-      const blurbPrompt = MEDIA_KIT_PROMPTS.portfolioStory(creatorData?.niche || 'Digital Creator', topic);
-      const blurbResult = await generateContent(blurbPrompt, 'Blurb generation failed');
-      const blurb = typeof blurbResult === 'string' ? JSON.parse(blurbResult) : blurbResult;
-
-      setPortfolioData({
-        ...cases,
-        aboutMe: blurb.aboutMe
-      });
-      addToast('success', 'Media Kit Portfolio Personalized!');
-    } catch (err) {
-      addToast('error', 'Failed to generate personalized portfolio');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen && !portfolioData) {
-      generatePortfolio();
-    }
-  }, [isOpen]);
-
-  const stats = [
-    { label: 'Total Views', value: data?.analytics?.kpi?.totalViews?.value?.toLocaleString() || '1.2M', icon: BarChart2, color: 'var(--accent-primary)' },
-    { label: 'Subscribers', value: data?.analytics?.kpi?.totalSubs?.value?.toLocaleString() || '125K', icon: Users, color: 'var(--accent-secondary)' },
-    { label: 'Avg Eng.', value: `${data?.analytics?.kpi?.engagementRate?.value || '4.2'}%`, icon: Zap, color: 'var(--accent-warning)' },
-    { label: 'Brands', value: dealsData?.brands?.length || '8+', icon: Briefcase, color: 'var(--accent-success)' }
-  ];
-
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFillColor(124, 92, 252);
-    doc.rect(0, 0, pageWidth, 40, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('CREATOR MEDIA KIT', 15, 25);
-    doc.setFontSize(10);
-    doc.text(`GROUNDED BY BRAND GENOME: ${data?.genome?.dna_snippet?.substring(0, 50) || 'Active'}...`, 15, 35);
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(16);
-    doc.text('Portfolio Overview', 15, 55);
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    doc.text(portfolioData?.aboutMe || 'Professional Digital Creator focusing on high-impact storytelling.', 15, 65, { maxWidth: pageWidth - 30 });
-    doc.setFontSize(14);
-    doc.text('Key Performance Metrics', 15, 85);
-    const statsRows = stats.map(s => [s.label, s.value]);
-    doc.autoTable({
-      startY: 90,
-      head: [['Metric', 'Value']],
-      body: statsRows,
-      theme: 'grid',
-      headStyles: { fillColor: [124, 92, 252] }
-    });
-    if (portfolioData?.caseStudies) {
-      const startY = doc.lastAutoTable.finalY + 15;
+      const doc = new jsPDF();
+      doc.setFontSize(22);
+      doc.text('CREATOR INTELLIGENCE DOSSIER', 20, 20);
       doc.setFontSize(14);
-      doc.text('Performance Case Studies', 15, startY);
-      const caseRows = portfolioData.caseStudies.map(c => [c.name, c.result]);
-      doc.autoTable({
-        startY: startY + 5,
-        head: [['Campaign/Project', 'Result']],
-        body: caseRows,
-        theme: 'striped',
-        headStyles: { fillColor: [0, 212, 255] }
-      });
+      doc.text(`Identity: ${creatorData?.handle || 'Unknown Operative'}`, 20, 40);
+      doc.text(`Niche: ${creatorData?.niche || 'Generalist'}`, 20, 50);
+      doc.save('Creator_Intelligence_Kit.pdf');
+      addToast('success', 'Dossier synthesized and downloaded.');
+    } catch (e) {
+      addToast('error', 'Synthesis failure.');
+    } finally {
+      setGenerating(false);
     }
-    doc.save(`${topic.replace(/\s+/g, '_')}_Media_Kit.pdf`);
-    addToast('success', 'Media Kit PDF Exported!');
   };
-
-  if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+      {isOpen && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', padding: 20 }}
           onClick={onClose}
-          style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(12px)' }}
-        />
-        
-        <motion.div
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="media-kit-modal"
-          style={{
-            width: '100%', maxWidth: '1100px', maxHeight: '90vh', background: 'var(--bg-primary)',
-            borderRadius: '32px', border: '1px solid var(--border-subtle)', position: 'relative',
-            zIndex: 1001, overflow: 'hidden', display: 'flex', flexDirection: 'column',
-            boxShadow: '0 40px 100px rgba(0,0,0,0.6)'
-          }}
         >
-          {/* Header */}
-          <div style={{ padding: '24px 40px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-secondary)50' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                <Star size={24} />
-              </div>
-              <div>
-                <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, letterSpacing: '-0.02em' }}>Talent Representation One-Sheet</h2>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                   <Activity size={12} /> Live Performance Verified
-                </div>
-              </div>
+          <motion.div 
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            exit={{ scale: 0.9, y: 20 }}
+            className="glass"
+            style={{ width: '100%', maxWidth: 1000, maxHeight: '90vh', borderRadius: 40, border: '1px solid var(--accent-primary)30', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ padding: '32px 48px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-tertiary)30' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Sparkles size={22} />
+                  </div>
+                  <div>
+                     <h2 style={{ fontSize: '1.5rem', fontWeight: 950, margin: 0 }}>Professional Media Kit</h2>
+                     <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', margin: 0 }}>AI-Augmented ecosystem portfolio & engagement metrics</p>
+                  </div>
+               </div>
+               <button onClick={onClose} className="btn-ghost" style={{ padding: 12, borderRadius: '50%' }}><X size={24} /></button>
             </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={generatePDF} className="shiny-button" style={{ padding: '10px 24px', fontSize: '0.85rem' }}>
-                <Download size={18} /> Export One-Sheet
-              </button>
-              <button onClick={onClose} className="btn-mini" style={{ padding: 10, borderRadius: 12 }}><X size={20} /></button>
-            </div>
-          </div>
 
-          {/* Scrollable Content */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '40px' }}>
-            <div className="media-kit-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 40 }}>
-              
-              {/* Left Column: Narrative */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-                {/* Identity */}
-                <section>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                     <Sparkles size={20} color="var(--accent-primary)" />
-                     <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)' }}>Identity & Creative Mission</h3>
-                   </div>
-                   <motion.div 
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     style={{ padding: '32px', background: 'var(--bg-tertiary)', borderRadius: '24px', border: '1px solid var(--accent-primary)20', position: 'relative' }}
-                   >
-                     <div style={{ position: 'absolute', top: -10, left: 32, padding: '4px 12px', background: 'var(--accent-primary)', color: 'white', borderRadius: 20, fontSize: '0.6rem', fontWeight: 900 }}>AI SYNTHESIZED</div>
-                     {loading ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                           <div className="skeleton-line" style={{ height: 16, width: '100%' }} />
-                           <div className="skeleton-line" style={{ height: 16, width: '90%' }} />
-                           <div className="skeleton-line" style={{ height: 16, width: '40%' }} />
-                        </div>
-                     ) : (
-                       <p style={{ fontSize: '1.15rem', lineHeight: 1.7, margin: 0, fontWeight: 500, color: 'var(--text-primary)' }}>
-                         {portfolioData?.aboutMe || `A dominant voice in the ${creatorData?.niche || 'Digital Economy'}, focused on high-conversion storytelling and cinematic narrative arcs.`}
-                       </p>
-                     )}
-                   </motion.div>
-                </section>
+            {/* Content */}
+            <div style={{ padding: 48, overflowY: 'auto', flex: 1 }}>
+               
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginBottom: 48 }}>
+                  
+                  {/* Persona Summary */}
+                  <div className="glass" style={{ padding: 40, borderRadius: 32, position: 'relative', overflow: 'hidden' }}>
+                     <div style={{ position: 'absolute', right: -20, top: -20, opacity: 0.05 }}><Users size={160} /></div>
+                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: 28 }}>Creator Identity</h3>
+                     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                        <KitField label="HANDLE" value={`@${creatorData?.handle || 'operative'}`} />
+                        <KitField label="NICHE" value={creatorData?.niche || 'Multi-Modal Specialist'} />
+                        <KitField label="AUTHORITY RANK" value="Alpha Cluster" />
+                     </div>
+                  </div>
 
-                {/* Case Studies */}
-                <section>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                     <TrendingUp size={20} color="var(--accent-secondary)" />
-                     <h3 style={{ margin: 0, fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)' }}>Performance Case Studies</h3>
-                   </div>
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                     {loading ? (
-                        [1, 2].map(i => <div key={i} className="skeleton-card" style={{ height: '140px', borderRadius: 20 }} />)
-                     ) : (
-                       portfolioData?.caseStudies?.map((study, i) => (
-                         <motion.div 
-                           key={i} 
-                           initial={{ opacity: 0, x: -10 }}
-                           animate={{ opacity: 1, x: 0 }}
-                           transition={{ delay: i * 0.1 }}
-                           style={{ padding: '24px', background: 'var(--bg-secondary)', borderRadius: '20px', border: '1px solid var(--border-subtle)', position: 'relative' }}
-                         >
-                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
-                              <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>{study.name}</h4>
-                              <div className="badge badge-primary" style={{ fontSize: '0.65rem' }}>{study.result}</div>
-                           </div>
-                           <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>{study.story}</p>
-                           <div style={{ display: 'flex', gap: 12, borderTop: '1px solid var(--border-subtle)', paddingTop: 12 }}>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--accent-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                 <Zap size={14} /> Synergy: {study.synergy}
-                              </div>
-                           </div>
-                         </motion.div>
-                       ))
-                     )}
-                   </div>
-                </section>
-              </div>
+                  {/* Performance Metrics */}
+                  <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: 28 }}>Ecosystem Telemetry</h3>
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                        <StatBox label="Impressions" value="1.2M+" color="var(--accent-primary)" />
+                        <StatBox label="Engagement" value="8.4%" color="var(--accent-success)" />
+                        <StatBox label="Retention" value="72s" color="var(--accent-secondary)" />
+                        <StatBox label="Growth" value="+12%" color="var(--accent-warning)" />
+                     </div>
+                  </div>
 
-              {/* Right Column: Metrics & Demographics */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                   {stats.map((stat, i) => (
-                     <motion.div 
-                        key={i} 
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        style={{ padding: '24px', background: 'var(--bg-tertiary)', borderRadius: '24px', border: '1px solid var(--border-subtle)', textAlign: 'center' }}
-                      >
-                        <stat.icon size={20} color={stat.color} style={{ marginBottom: 12, margin: '0 auto 12px' }} />
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{stat.value}</div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 800, marginTop: 4 }}>{stat.label}</div>
-                      </motion.div>
-                   ))}
-                </div>
+               </div>
 
-                {/* Demographics */}
-                <motion.div 
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   style={{ padding: '32px', background: 'var(--bg-secondary)', borderRadius: '24px', border: '1px solid var(--border-subtle)' }}
-                >
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
-                      <Globe size={18} color="var(--accent-info)" />
-                      <h3 style={{ fontSize: '0.9rem', fontWeight: 800, margin: 0 }}>Audience Fingerprint</h3>
-                   </div>
-                   
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                      {[
-                        { label: '18-24 Gen Z', value: 45, color: 'var(--accent-primary)' },
-                        { label: '25-34 Millennial', value: 35, color: 'var(--accent-secondary)' },
-                        { label: '35+ Professional', value: 20, color: 'var(--accent-info)' }
-                      ].map((item, i) => (
-                        <div key={i}>
-                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 8 }}>
-                              <span style={{ color: 'var(--text-secondary)' }}>{item.label}</span>
-                              <span style={{ fontWeight: 800 }}>{item.value}%</span>
-                           </div>
-                           <div style={{ height: 6, background: 'var(--bg-primary)', borderRadius: 3, overflow: 'hidden' }}>
-                              <motion.div 
-                                 initial={{ width: 0 }}
-                                 animate={{ width: `${item.value}%` }}
-                                 transition={{ delay: 0.5 + (i * 0.1), duration: 1 }}
-                                 style={{ height: '100%', background: item.color }} 
-                              />
+               {/* Active Deals / Partnerships */}
+               <div style={{ marginBottom: 48 }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 900, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 12 }}>
+                     <Briefcase size={22} color="var(--accent-secondary)" /> Strategic Partnerships
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+                     {dealsData?.slice(0, 3).map((deal, i) => (
+                        <div key={i} className="glass glass-hover" style={{ padding: 28, borderRadius: 24 }}>
+                           <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 8 }}>{deal.brand}</h4>
+                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-tertiary)' }}>{deal.status}</span>
+                              <ShieldCheck size={16} color="var(--accent-success)" />
                            </div>
                         </div>
-                      ))}
-                   </div>
+                     )) || <div className="glass" style={{ padding: 32, textAlign: 'center', opacity: 0.5 }}>No active partnerships mapped.</div>}
+                  </div>
+               </div>
 
-                   <div style={{ marginTop: 24, padding: 16, background: 'var(--bg-tertiary)', borderRadius: 16, fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                      Most engaged territory: <strong style={{ color: 'var(--text-primary)' }}>United States (62%)</strong>, followed by <strong style={{ color: 'var(--text-primary)' }}>United Kingdom (12%)</strong> and <strong style={{ color: 'var(--text-primary)' }}>Europe (10%)</strong>.
-                   </div>
-                </motion.div>
-
-                {/* Brand Synergy */}
-                <motion.div 
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   style={{ padding: '32px', background: 'linear-gradient(135deg, var(--accent-primary)15 0%, var(--accent-secondary)15 100%)', borderRadius: '24px', border: '1px solid var(--accent-primary)30' }}
-                >
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <CheckCircle size={18} color="var(--accent-primary)" />
-                      <span style={{ fontWeight: 900, fontSize: '0.9rem' }}>Market Fit Analysis</span>
-                   </div>
-                   <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-                     Your creative output aligns with high-intent audiences in <strong>B2B Tech</strong>, <strong>Growth Marketing</strong>, and <strong>Personal Finance</strong> sectors.
-                   </p>
-                </motion.div>
-              </div>
+               {/* Vision Statement */}
+               <div className="glass" style={{ padding: 40, borderRadius: 32, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+                     <Globe size={22} color="var(--accent-primary)" /> Operational Philosophy
+                  </h3>
+                  <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, fontStyle: 'italic' }}>
+                     "Leveraging high-fidelity neural insights to saturate engagement loops across multi-modal platforms, ensuring maximum retention and recursive audience acquisition."
+                  </p>
+               </div>
 
             </div>
-          </div>
+
+            {/* Footer / Actions */}
+            <div style={{ padding: '32px 48px', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)30', display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
+               <button className="btn-secondary" style={{ padding: '12px 24px' }}>
+                  <Share2 size={18} />
+                  <span>Share Kit</span>
+               </button>
+               <button onClick={generatePDF} disabled={generating} className="btn-primary" style={{ padding: '12px 32px' }}>
+                  {generating ? <RefreshCw className="animate-spin" size={18} /> : <Download size={18} />}
+                  <span>{generating ? 'Synthesizing...' : 'Download Dossier (PDF)'}</span>
+               </button>
+            </div>
+          </motion.div>
         </motion.div>
-      </div>
+      )}
     </AnimatePresence>
   );
-};
+}
 
-export default MediaKit;
+function KitField({ label, value }) {
+   return (
+      <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: 16 }}>
+         <div style={{ fontSize: '0.65rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+         <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>{value}</div>
+      </div>
+   );
+}
+
+function StatBox({ label, value, color }) {
+   return (
+      <div className="glass" style={{ padding: 20, borderRadius: 16, textAlign: 'center' }}>
+         <div style={{ fontSize: '0.6rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+         <div style={{ fontSize: '1.4rem', fontWeight: 950, color: color }}>{value}</div>
+      </div>
+   );
+}

@@ -1,236 +1,160 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Shield, Trash2, Mail, Users, Loader2 } from 'lucide-react';
+import { 
+  X, UserPlus, Shield, Trash2, Mail, Users, Loader2, 
+  Settings, Zap, ShieldCheck, User, ChevronRight,
+  RefreshCw, Plus
+} from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { dbService } from '../services/dbService';
 
 export default function TeamSettingsModal() {
-  const { showTeamSettings, setShowTeamSettings, activeWorkspace, workspaces } = useCreator();
+  const { showTeamSettings, setShowTeamSettings, workspaces, activeWorkspace } = useCreator();
   const { user } = useAuth();
   const { addToast } = useToast();
-
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [selectedRole, setSelectedRole] = useState('editor');
   const [members, setMembers] = useState([]);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
 
-  const currentWs = workspaces.find(w => w.id === activeWorkspace);
-  const isTeamWorkspace = currentWs?.type === 'team';
+  const team = workspaces.find(w => w.id === activeWorkspace);
+  const isOwner = team?.created_by === user?.id;
 
-  // Fetch real members for team workspace
   useEffect(() => {
-    if (isTeamWorkspace && activeWorkspace) {
-      setMembers([]);
-      setSaving(true);
-      dbService.getUserTeams(user.id).then(teams => {
-        const currentTeam = teams.find(t => t.id === activeWorkspace);
-        if (currentTeam?.team_members) {
-          const formatted = currentTeam.team_members.map(m => ({
-            id: m.id,
-            dbId: m.id,
-            name: m.email.split('@')[0],
-            email: m.email,
-            role: m.role,
-            status: m.status,
-            avatar: m.email[0].toUpperCase()
-          }));
-          setMembers(formatted);
-        }
-      }).finally(() => setSaving(false));
-    } else {
-      setMembers([
-        { id: 'me', name: user?.email?.split('@')[0] || 'You', email: user?.email || 'you@example.com', role: 'owner', avatar: null }
-      ]);
+    if (showTeamSettings && team && team.type !== 'personal') {
+      setLoading(true);
+      dbService.getTeamMembers(team.id).then(data => {
+        setMembers(data);
+        setLoading(false);
+      });
     }
-  }, [activeWorkspace, isTeamWorkspace, user]);
-
-  if (!showTeamSettings) return null;
+  }, [showTeamSettings, team]);
 
   const handleInvite = async (e) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
-    setSaving(true);
+    if (!inviteEmail.trim() || inviting) return;
+    setInviting(true);
     try {
-      // Try to persist via Supabase if on a real team workspace
-      if (isTeamWorkspace) {
-        await dbService.inviteMember(activeWorkspace, inviteEmail, selectedRole);
-      }
-      // Optimistic UI update
-      setMembers(prev => [...prev, {
-        id: Date.now(),
-        name: inviteEmail.split('@')[0],
-        email: inviteEmail,
-        role: selectedRole,
-        avatar: inviteEmail[0].toUpperCase(),
-        status: 'pending'
-      }]);
-      addToast('success', `Invitation sent to ${inviteEmail}`);
+      await dbService.inviteToTeam(team.id, inviteEmail);
+      addToast('success', `Manifesto sent to ${inviteEmail}`);
       setInviteEmail('');
-    } catch (err) {
-      addToast('error', 'Failed to invite member');
-    } finally {
-      setSaving(false);
-    }
+      const data = await dbService.getTeamMembers(team.id);
+      setMembers(data);
+    } catch (err) { addToast('error', 'Link establishment failed'); }
+    finally { setInviting(false); }
   };
 
-  const handleRemoveMember = async (member) => {
-    setMembers(prev => prev.filter(m => m.id !== member.id));
-    addToast('info', 'Member removed');
-    try {
-      if (member.dbId) await dbService.removeMember(member.dbId);
-    } catch (e) {
-      console.warn('Remove member failed:', e.message);
-    }
-  };
-
-  const handleRoleChange = async (member, newRole) => {
-    setMembers(prev => prev.map(m => m.id === member.id ? { ...m, role: newRole } : m));
-    try {
-      if (member.dbId) await dbService.updateMemberRole(member.dbId, newRole);
-      addToast('success', 'Role updated');
-    } catch (e) {
-      console.warn('Role update failed:', e.message);
-    }
-  };
+  if (!showTeamSettings || !team || team.type === 'personal') return null;
 
   return (
     <AnimatePresence>
-      {showTeamSettings && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowTeamSettings(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100 }}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            style={{
-              position: 'fixed',
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '90%', maxWidth: 600,
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-medium)',
-              borderRadius: 16,
-              boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
-              zIndex: 101,
+      <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+        <motion.div
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           exit={{ opacity: 0 }}
+           onClick={() => setShowTeamSettings(false)}
+           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)' }}
+        />
+        <motion.div
+           initial={{ scale: 0.9, opacity: 0, y: 30 }}
+           animate={{ scale: 1, opacity: 1, y: 0 }}
+           exit={{ scale: 0.9, opacity: 0, y: 30 }}
+           transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+           className="glass"
+           style={{
+              width: '100%',
+              maxWidth: 720,
+              maxHeight: '85vh',
+              background: 'rgba(12, 12, 18, 0.98)',
+              borderRadius: 40,
+              border: '1px solid var(--accent-primary)20',
               overflow: 'hidden',
-              maxHeight: '90vh',
               display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            {/* Header */}
-            <div style={{ padding: 24, borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(124, 92, 252, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Team Settings</h3>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                    Manage members for <strong style={{ color: 'var(--text-primary)' }}>{currentWs?.name}</strong>
-                  </div>
-                </div>
+              flexDirection: 'column',
+              boxShadow: 'var(--shadow-glow)',
+              position: 'relative',
+              zIndex: 2010
+           }}
+        >
+           {/* Header */}
+           <div style={{ padding: '40px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+                 <div className="glow-border" style={{ width: 52, height: 52, borderRadius: 16, background: 'var(--gradient-aurora)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={26} />
+                 </div>
+                 <div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Syndicate Configuration</h2>
+                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{team.name} Unit Nodes</p>
+                 </div>
               </div>
-              <button onClick={() => setShowTeamSettings(false)} className="icon-btn"><X size={20} /></button>
-            </div>
+              <button onClick={() => setShowTeamSettings(false)} className="btn-ghost" style={{ padding: 12, borderRadius: '50%' }}><X size={24} /></button>
+           </div>
 
-            {/* Scrollable Body */}
-            <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
+           <div style={{ flex: 1, overflowY: 'auto', padding: '40px' }} className="custom-scrollbar">
+              
               {/* Invite Section */}
-              <div style={{ marginBottom: 32 }}>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 8 }}>Invite New Member</label>
-                <form onSubmit={handleInvite} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <div style={{ position: 'relative', flex: 1, minWidth: 180 }}>
-                    <Mail size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-tertiary)' }} />
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="Enter email address"
-                      style={{ paddingLeft: 36, width: '100%' }}
-                    />
-                  </div>
-                  <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} style={{ width: 120 }}>
-                    <option value="admin">Admin</option>
-                    <option value="editor">Editor</option>
-                    <option value="viewer">Viewer</option>
-                  </select>
-                  <button type="submit" className="btn-primary" disabled={!inviteEmail || saving} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {saving ? <Loader2 size={14} className="spin" /> : <UserPlus size={16} />}
-                    Invite
-                  </button>
-                </form>
-              </div>
+              {isOwner && (
+                 <div className="glass" style={{ padding: 32, borderRadius: 24, marginBottom: 40, border: '1px solid var(--accent-primary)10' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                       <UserPlus size={18} color="var(--accent-primary)" />
+                       <h4 style={{ fontSize: '0.8rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Establish Link</h4>
+                    </div>
+                    <form onSubmit={handleInvite} style={{ display: 'flex', gap: 12 }}>
+                       <input 
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="Operative Email..."
+                          style={{ flex: 1, background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', borderRadius: 12, padding: '0 20px', fontSize: '1rem', color: 'var(--text-primary)', outline: 'none' }}
+                       />
+                       <button type="submit" disabled={inviting} className="btn-primary" style={{ padding: '14px 28px', borderRadius: 12 }}>
+                          {inviting ? <RefreshCw className="animate-spin" size={18} /> : <Plus size={18} />}
+                          <span>Invite</span>
+                       </button>
+                    </form>
+                 </div>
+              )}
 
               {/* Members List */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: 12 }}>
-                  Team Members ({members.length})
-                </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {members.map(member => (
-                    <div key={member.id} className="card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                          width: 36, height: 36, borderRadius: '50%',
-                          background: member.avatar ? 'var(--bg-tertiary)' : 'var(--accent-primary)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontWeight: 600, fontSize: '0.9rem', flexShrink: 0
-                        }}>
-                          {member.avatar || member.name[0]}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                            {member.name}
-                            {member.status === 'pending' && <span style={{ fontSize: '0.7rem', color: 'var(--accent-warning)', marginLeft: 6 }}>Pending</span>}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{member.email}</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <Shield size={14} color={member.role === 'owner' ? 'var(--accent-warning)' : 'var(--text-tertiary)'} />
-                          {member.role === 'owner' ? (
-                            <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Owner</span>
-                          ) : (
-                            <select
-                              value={member.role}
-                              onChange={(e) => handleRoleChange(member, e.target.value)}
-                              style={{ padding: '4px 8px', fontSize: '0.85rem', background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer' }}
-                            >
-                              <option value="admin">Admin</option>
-                              <option value="editor">Editor</option>
-                              <option value="viewer">Viewer</option>
-                            </select>
-                          )}
-                        </div>
-                        {member.role !== 'owner' && (
-                          <button onClick={() => handleRemoveMember(member)} title="Remove Member" style={{ color: 'var(--accent-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                            <Trash2 size={16} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <ShieldCheck size={18} color="var(--accent-success)" />
+                    <h4 style={{ fontSize: '0.8rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Neural Cohorts</h4>
+                 </div>
 
-            {/* Footer */}
-            <div style={{ padding: 16, background: 'var(--bg-tertiary)', borderTop: '1px solid var(--border-subtle)', textAlign: 'right', flexShrink: 0 }}>
-              <button onClick={() => setShowTeamSettings(false)} className="btn-ghost">Done</button>
-            </div>
-          </motion.div>
-        </>
-      )}
+                 {loading ? (
+                    <div style={{ textAlign: 'center', padding: 40, opacity: 0.5 }}><Loader2 className="animate-spin" size={32} /></div>
+                 ) : (
+                    members.map(member => (
+                       <div key={member.id} className="glass glass-hover" style={{ padding: 20, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                             <div className="glow-border" style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem', fontWeight: 950 }}>
+                                {member.user?.email?.[0]?.toUpperCase() || '?'}
+                             </div>
+                             <div>
+                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{member.user?.email}</div>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 900, color: member.role === 'owner' ? 'var(--accent-warning)' : 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                                   {member.role}
+                                </div>
+                             </div>
+                          </div>
+                          {isOwner && member.user?.id !== user?.id && (
+                             <button className="btn-ghost" style={{ padding: 10, borderRadius: 12, color: 'var(--accent-error)' }}><Trash2 size={18} /></button>
+                          )}
+                       </div>
+                    ))
+                 )}
+              </div>
+           </div>
+
+           <div style={{ padding: '32px 40px', borderTop: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Syndicate Protocol v1.0 • E2E Link Encryption Enabled</p>
+           </div>
+        </motion.div>
+      </div>
     </AnimatePresence>
   );
 }

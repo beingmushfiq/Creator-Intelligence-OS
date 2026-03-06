@@ -4,222 +4,152 @@ import {
   Battery, Coffee, RefreshCcw, AlertTriangle, CheckCircle2, 
   Brain, Calendar, ArrowRight, TrendingDown, Wind, 
   Zap, Sparkles, Activity, ShieldAlert, Heart, Info,
-  ChevronRight, Timer
+  ChevronRight, Timer, HeartPulse, Recycle
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
-import { analyzeWorkload, getEvergreenRecycleIdeas } from '../engine/aiService';
+import { analyzeWorkload, getEvergreenRecycleIdeas } from '../engine/aiService.js';
 
 export default function BurnoutTab() {
-  const { data, topic } = useCreator();
-  const [report, setReport] = useState(null);
-  const [recycleIdeas, setRecycleIdeas] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data, loading, regenerateSection } = useCreator();
+  const [sustainability, setSustainability] = useState(null);
+  const [ideas, setIdeas] = useState([]);
 
-  useEffect(() => {
-    const loadSustainabilityData = async () => {
-      setLoading(true);
-      try {
-        const mockHistory = [
-          { date: '2024-02-20', projects: 2, difficulty: 'High' },
-          { date: '2024-02-21', projects: 1, difficulty: 'Medium' },
-          { date: '2024-02-22', projects: 3, difficulty: 'High' },
-          { date: '2024-02-23', projects: 1, difficulty: 'Low' },
-        ];
-        
-        const [workloadReport, ideas] = await Promise.all([
-          analyzeWorkload(mockHistory),
-          getEvergreenRecycleIdeas([{ topic: topic, performance: '98%' }, { topic: 'Social Media Psychology', performance: '92%' }])
-        ]);
-
-        setReport(workloadReport);
-        setRecycleIdeas(ideas || []);
-      } catch (err) {
-        console.error('Sustainability data failed:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSustainabilityData();
-  }, [topic]);
-
-  if (loading) {
-    return (
-      <div className="tab-content center-content">
-        <div style={{ textAlign: 'center' }}>
-          <RefreshCcw size={48} className="spin" color="var(--accent-primary)" style={{ marginBottom: 24 }} />
-          <h3 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Analyzing Creative Battery</h3>
-          <p style={{ color: 'var(--text-tertiary)' }}>Mapping production velocity & burnout signals...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const getRiskColor = () => {
-    if (report?.riskLevel === 'Low') return 'var(--accent-success)';
-    if (report?.riskLevel === 'Moderate') return 'var(--accent-warning)';
-    return 'var(--accent-danger)';
+  const loadSustainabilityData = async () => {
+    if (data?.tasks) {
+      const analysis = await analyzeWorkload(data.tasks);
+      setSustainability(analysis);
+      const recycleIdeas = await getEvergreenRecycleIdeas();
+      setIdeas(recycleIdeas);
+    }
   };
 
+  useEffect(() => { loadSustainabilityData(); }, [data?.tasks]);
+
+  const getRiskColor = (risk) => {
+    if (risk === 'High') return 'var(--accent-danger)';
+    if (risk === 'Moderate') return 'var(--accent-warning)';
+    return 'var(--accent-success)';
+  };
+
+  if (!sustainability) return <EmptyState />;
+
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Longevity Laboratory</h2>
-          <p className="tab-subtitle">AI-powered workload sustainability & creative recovery intelligence</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Neural Sustainability</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Burnout protection protocols & recursive creative energy diagnostics</p>
         </div>
-        <div className="badge badge-primary" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
-           <Heart size={14} />
-           <span>System Health: Optimal</span>
+        <div style={{ display: 'flex', gap: 10 }}>
+           <button onClick={loadSustainabilityData} className="btn-secondary" disabled={loading} style={{ padding: '12px' }}>
+              <RefreshCcw size={18} />
+           </button>
         </div>
       </div>
 
-      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        
-        {/* Hero Sustainability Trackers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
-           <motion.div 
-             whileHover={{ y: -5 }}
-             className="card" 
-             style={{ padding: 32, borderTop: '4px solid var(--accent-primary)', background: 'var(--bg-secondary)' }}
-           >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                 <div style={{ padding: 8, borderRadius: 10, background: 'var(--accent-primary)15', color: 'var(--accent-primary)' }}>
-                    <Battery size={20} />
-                 </div>
-                 <h4 style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Content Buffer</h4>
-              </div>
-              <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: 8 }}>{report?.bufferDays || 0}<span style={{ fontSize: '1.2rem', color: 'var(--text-tertiary)', marginLeft: 8 }}>DAYS</span></div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 20 }}>Estimated production safety net before gap.</p>
-              <div style={{ height: 10, background: 'var(--bg-tertiary)', borderRadius: 5, overflow: 'hidden' }}>
-                 <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min((report?.bufferDays || 0) * 10, 100)}%` }} style={{ height: '100%', background: 'var(--accent-primary)' }} />
-              </div>
-           </motion.div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, marginBottom: 48 }}>
+         
+         {/* Vitality Hub */}
+         <div className="glass" style={{ padding: 40, borderRadius: 32, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Battery size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Neural Battery</h3>
+               </div>
+               <div className="glass" style={{ padding: '6px 14px', borderRadius: 100, fontSize: '0.65rem', fontWeight: 950, color: getRiskColor(sustainability.riskLevel) }}>
+                  CRITICAL AT 84%
+               </div>
+            </div>
 
-           <motion.div 
-             whileHover={{ y: -5 }}
-             className="card" 
-             style={{ padding: 32, borderTop: '4px solid var(--accent-secondary)', background: 'var(--bg-secondary)' }}
-           >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                 <div style={{ padding: 8, borderRadius: 10, background: 'var(--accent-secondary)15', color: 'var(--accent-secondary)' }}>
-                    <Brain size={20} />
-                 </div>
-                 <h4 style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Cognitive Load</h4>
-              </div>
-              <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: 8 }}>{report?.loadScore || 0}<span style={{ fontSize: '1.2rem', color: 'var(--text-tertiary)', marginLeft: 8 }}>%</span></div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 20 }}>Mental intensity of the current active cycle.</p>
-              <div style={{ height: 10, background: 'var(--bg-tertiary)', borderRadius: 5, overflow: 'hidden' }}>
-                 <motion.div initial={{ width: 0 }} animate={{ width: `${report?.loadScore || 0}%` }} style={{ height: '100%', background: 'var(--accent-secondary)' }} />
-              </div>
-           </motion.div>
+            <div style={{ position: 'relative', height: 12, background: 'var(--bg-tertiary)', borderRadius: 10, marginBottom: 40, overflow: 'hidden' }}>
+               <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: '84%' }}
+                  style={{ height: '100%', background: 'linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))', boxShadow: '0 0 20px var(--accent-primary)40' }} 
+               />
+            </div>
 
-           <motion.div 
-             whileHover={{ y: -5 }}
-             className="card" 
-             style={{ padding: 32, borderTop: `4px solid ${getRiskColor()}`, background: 'var(--bg-secondary)' }}
-           >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                 <div style={{ padding: 8, borderRadius: 10, background: `${getRiskColor()}15`, color: getRiskColor() }}>
-                    <ShieldAlert size={20} />
-                 </div>
-                 <h4 style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Burnout Risk</h4>
-              </div>
-              <div style={{ fontSize: '3rem', fontWeight: 950, marginBottom: 8, color: getRiskColor() }}>{report?.riskLevel || 'Unknown'}</div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 20 }}>AI-detected exhaustion signal in output velocity.</p>
-              <div style={{ display: 'flex', gap: 8 }}>
-                 {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} style={{ flex: 1, height: 10, borderRadius: 5, background: i <= (report?.riskLevel === 'Low' ? 1 : report?.riskLevel === 'Moderate' ? 3 : 5) ? getRiskColor() : 'var(--bg-tertiary)' }} />
-                 ))}
-              </div>
-           </motion.div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+               <div className="glass" style={{ padding: 24, borderRadius: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 10 }}>Pacing Logic</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--accent-success)' }}>Optimal</div>
+               </div>
+               <div className="glass" style={{ padding: 24, borderRadius: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 10 }}>Stress Load</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--accent-warning)' }}>Moderate</div>
+               </div>
+               <div className="glass" style={{ padding: 24, borderRadius: 20, textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 10 }}>Evergreen Ratio</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 950, color: 'var(--accent-primary)' }}>64%</div>
+               </div>
+            </div>
+         </div>
+
+         {/* Energy Protection Sidebar */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <ShieldAlert size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Protection Directives</h3>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {sustainability?.advice?.map((adv, i) => (
+                     <div key={i} className="glass glass-hover" style={{ padding: '14px 18px', borderRadius: 12, display: 'flex', gap: 12, alignItems: 'center' }}>
+                        <Zap size={14} color="var(--accent-warning)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{adv}</span>
+                     </div>
+                  ))}
+               </div>
+            </div>
+
+            <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <Coffee size={18} color="var(--accent-primary)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Wellness Node</span>
+               </div>
+               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  High creative variance detected. Recommend scheduled "Idea Incubation" blocks to maintain long-term neural resilience.
+               </p>
+            </div>
+         </div>
+
+      </div>
+
+      {/* Evergreen Recycling */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+         <h3 style={{ fontSize: '1.3rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Recycle size={22} color="var(--accent-success)" /> Narrative Recycling Ideas
+         </h3>
+         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+            {ideas.map((idea, i) => (
+               <motion.div key={i} whileHover={{ y: -6 }} className="glass glass-hover" style={{ padding: 28, borderRadius: 24 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                     <div className="glass" style={{ padding: '6px 12px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-success)' }}>SUSTAINABLE</div>
+                     <ArrowRight size={16} color="var(--text-tertiary)" />
+                  </div>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 12 }}>{idea.topic}</h4>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{idea.logic}</p>
+               </motion.div>
+            ))}
+         </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <div className="glass glass-hover" style={{ maxWidth: 480, padding: 48, borderRadius: 32, textAlign: 'center' }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Brain size={40} />
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
-           {/* Protocols */}
-           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: 32 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-                 <div style={{ padding: 10, borderRadius: 12, background: 'var(--accent-warning)15', color: 'var(--accent-warning)' }}>
-                    <Coffee size={24} />
-                 </div>
-                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Sustainability Protocol</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                 {report?.tips?.map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 20, padding: 20, background: 'var(--bg-secondary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                       <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-warning)15', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900, flexShrink: 0 }}>
-                          {i + 1}
-                       </div>
-                       <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{tip}</p>
-                    </div>
-                 ))}
-              </div>
-           </motion.div>
-
-           {/* Evergreen Recycler */}
-           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: 32 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-                 <div style={{ padding: 10, borderRadius: 12, background: 'var(--accent-primary)15', color: 'var(--accent-primary)' }}>
-                    <RefreshCcw size={24} />
-                 </div>
-                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Evergreen Recycler</h3>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                 {recycleIdeas.map((idea, i) => (
-                    <motion.div 
-                      key={i} 
-                      whileHover={{ scale: 1.01, borderColor: 'var(--accent-primary)50' }}
-                      style={{ padding: 24, background: 'var(--bg-secondary)', borderRadius: 20, border: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                    >
-                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                          <span style={{ fontSize: '0.65rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Source: {idea.originalTopic}</span>
-                          <div className="badge badge-primary" style={{ fontSize: '0.65rem', fontWeight: 900 }}>{idea.complexity.toUpperCase()} ENERGY</div>
-                       </div>
-                       <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 8 }}>{idea.recycleAngle}</h4>
-                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent-primary)', fontSize: '0.8rem', fontWeight: 800 }}>
-                          <span>Initialize Repurpose</span>
-                          <ChevronRight size={14} />
-                       </div>
-                    </motion.div>
-                 ))}
-              </div>
-           </motion.div>
-        </div>
-
-        {/* Deep Breath Zone */}
-        <motion.div 
-           initial={{ opacity: 0, y: 30 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="card card-full" 
-           style={{ 
-             padding: '50px 70px', 
-             background: 'linear-gradient(135deg, var(--accent-primary) 0%, var(--bg-card) 100%)',
-             color: '#fff', border: 'none', position: 'relative', overflow: 'hidden',
-             display: 'flex', alignItems: 'center', gap: 60, flexWrap: 'wrap'
-           }}
-        >
-           <div style={{ position: 'absolute', right: -60, bottom: -60, opacity: 0.1 }}>
-              <Wind size={360} />
-           </div>
-
-           <div style={{ flex: 1, position: 'relative', zIndex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-                 <Timer size={32} />
-                 <span style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Serenity Protocol Active</span>
-              </div>
-              <h3 style={{ fontSize: '2.5rem', fontWeight: 950, marginBottom: 16, lineHeight: 1.1 }}>Deep Breath Protocol</h3>
-              <p style={{ fontSize: '1.2rem', opacity: 0.9, marginBottom: 32, maxWidth: 600, lineHeight: 1.5 }}>
-                 High-intensity production signals detected for 4 consecutive days. <strong>{report?.analysis || "Reset your cognitive baseline with a structured creative breather."}</strong>
-              </p>
-              <div style={{ display: 'flex', gap: 20 }}>
-                 <button className="shiny-button" style={{ background: '#fff', color: 'var(--accent-primary)', padding: '16px 40px', fontSize: '1rem', fontWeight: 900, border: 'none' }}>
-                    Start Guided Break
-                 </button>
-                 <button className="btn-secondary" style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', padding: '16px 40px', fontSize: '1rem', fontWeight: 900, border: '1px solid rgba(255,255,255,0.2)' }}>
-                    Log Production Rest
-                 </button>
-              </div>
-           </div>
-        </motion.div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Neural Sustainability</h3>
+        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>Initialize your workspace tasks to visualize creative energy diagnostics and burnout protection protocols.</p>
       </div>
     </div>
   );

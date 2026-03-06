@@ -10,11 +10,13 @@ import {
   ArrowRight,
   Sparkles,
   CheckSquare,
-  ListTodo
+  ListTodo,
+  Activity,
+  ChevronRight
 } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { useAuth } from '../context/AuthContext';
-import { dbService } from '../services/dbService';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
+import { dbService } from '../services/dbService.js';
 
 const TYPE_ICONS = {
   generation: Zap,
@@ -38,7 +40,7 @@ const TYPE_COLORS = {
 
 export default function ActivityFeed() {
   const { user } = useAuth();
-  const { activeWorkspace } = useCreator();
+  const { activeWorkspace, workspaces } = useCreator();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,50 +59,50 @@ export default function ActivityFeed() {
 
   useEffect(() => {
     fetchActivities();
-    // Poll every 30 seconds for new activities
     const interval = setInterval(fetchActivities, 30000);
     return () => clearInterval(interval);
   }, [user, activeWorkspace]);
 
   if (loading) {
     return (
-      <div className="tab-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-        <RefreshCw className="animate-spin" size={32} color="var(--accent-primary)" />
+      <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+        <RefreshCw className="animate-spin" size={48} color="var(--accent-primary)" />
       </div>
     );
   }
 
+  const currentWorkspaceName = workspaces.find(w => w.id === activeWorkspace)?.name || 'Central Workspace';
+
   return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <div>
-          <h2 className="tab-title text-gradient">Activity Feed</h2>
-          <p className="tab-subtitle">Real-time stream of team actions and workspace intelligence</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Activity Stream</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Real-time event logging & recursive workspace intelligence for {currentWorkspaceName}</p>
         </div>
-        <button className="btn-ghost" onClick={fetchActivities}>
-          <RefreshCw size={16} />
-          <span>Refresh</span>
+        <button className="btn-secondary" onClick={fetchActivities} style={{ padding: '12px' }}>
+          <RefreshCw size={18} />
         </button>
       </div>
 
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
         {activities.length === 0 ? (
-          <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-            <div style={{ 
-              width: 60, height: 60, borderRadius: '50%', 
+          <div className="glass" style={{ textAlign: 'center', padding: 80, borderRadius: 32 }}>
+            <div className="glow-border" style={{ 
+              width: 80, height: 80, borderRadius: 24, 
               background: 'var(--bg-tertiary)', display: 'flex', 
               alignItems: 'center', justifyContent: 'center', 
-              margin: '0 auto 16px' 
+              margin: '0 auto 24px' 
             }}>
-              <Clock size={30} color="var(--text-tertiary)" />
+              <Activity size={40} color="var(--text-tertiary)" />
             </div>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: 8 }}>No activity yet</h3>
-            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
-              Actions taken in this workspace will appear here.
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 12 }}>Archives Silent</h3>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '1rem', fontWeight: 600 }}>
+              Operational events in this workspace will materialize here.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <AnimatePresence mode="popLayout">
               {activities.map((item, idx) => {
                 const Icon = TYPE_ICONS[item.type] || TYPE_ICONS.default;
@@ -111,19 +113,21 @@ export default function ActivityFeed() {
                     key={item.id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="card"
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    whileHover={{ x: 8 }}
+                    className="glass glass-hover"
                     style={{ 
-                      padding: '16px 20px',
+                      padding: '20px 28px',
                       display: 'flex',
-                      gap: 16,
+                      gap: 20,
                       alignItems: 'center',
-                      borderLeft: `4px solid ${color}`
+                      borderRadius: 20,
+                      borderLeft: `3px solid ${color}`
                     }}
                   >
-                    <div style={{ 
-                      width: 40, height: 40, borderRadius: 10, 
-                      background: `${color}15`, display: 'flex', 
+                    <div className="glow-border" style={{ 
+                      width: 44, height: 44, borderRadius: 12, 
+                      background: `${color}10`, display: 'flex', 
                       alignItems: 'center', justifyContent: 'center',
                       color: color, flexShrink: 0
                     }}>
@@ -131,25 +135,26 @@ export default function ActivityFeed() {
                     </div>
 
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800 }}>
                           {item.description}
                         </div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', padding: '4px 10px', borderRadius: 8 }}>
                           {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                       
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.8rem', color: 'var(--text-tertiary)', fontWeight: 700 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <User size={12} />
-                          <span>{item.user_email?.split('@')[0] || 'Member'}</span>
+                          <span>{item.user_email?.split('@')[0].toUpperCase() || 'OPERATOR'}</span>
                         </div>
                         {item.projects?.topic && (
                           <>
-                            <ArrowRight size={12} />
-                            <div style={{ color: 'var(--accent-primary)', fontWeight: 500 }}>
-                              {item.projects.topic}
+                            <ChevronRight size={12} style={{ opacity: 0.3 }} />
+                            <div style={{ color: 'var(--accent-primary)', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 6 }}>
+                               <Sparkles size={10} />
+                               <span>{item.projects.topic}</span>
                             </div>
                           </>
                         )}

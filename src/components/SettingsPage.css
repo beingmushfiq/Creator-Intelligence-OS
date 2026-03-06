@@ -173,7 +173,10 @@
 /* ── Card ── */
 .sp-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-inner), var(--shadow-sm);
   border-radius: var(--radius-xl);
   padding: 28px;
   transition: all var(--transition-base);

@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, X, Volume2, Download, FastForward } from 'lucide-react';
+import { Play, Pause, X, Download, AudioWaveform, Sparkles } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 
 export default function AudioPlayer() {
@@ -45,12 +45,38 @@ export default function AudioPlayer() {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ y: 100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        className="fixed bottom-0 left-[var(--sidebar-width)] right-0 bg-bg-card border-t border-accent-primary/20 p-4 z-50 backdrop-blur-lg shadow-[0_-5px_20px_rgba(0,0,0,0.3)]"
+        initial={{ y: 100, opacity: 0, scale: 0.95 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 100, opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        style={{
+          position: 'fixed',
+          bottom: 40,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: 720,
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          pointerEvents: 'none'
+        }}
       >
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+        <div 
+          className="glass glass-strong" 
+          style={{ 
+            width: '100%', 
+            padding: '16px 24px', 
+            borderRadius: 24, 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 20,
+            boxShadow: 'var(--shadow-glow)',
+            border: '1px solid var(--accent-primary)30',
+            pointerEvents: 'auto'
+          }}
+        >
           <audio 
             ref={audioRef} 
             src={currentAudio} 
@@ -58,39 +84,65 @@ export default function AudioPlayer() {
             onEnded={() => setIsPlaying(false)}
           />
 
-          <div className="flex items-center gap-4">
-            <button 
+          {/* Icon / Play Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={togglePlay}
-              className="w-10 h-10 rounded-full bg-accent-primary text-white flex items-center justify-center hover:scale-105 transition-transform"
+              className="glow-border"
+              style={{
+                width: 48, height: 48, borderRadius: 16,
+                background: 'var(--gradient-aurora)',
+                color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 0 20px rgba(124, 92, 252, 0.4)',
+                border: 'none', cursor: 'pointer'
+              }}
             >
-              {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-            </button>
+              {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" style={{ marginLeft: 3 }} />}
+            </motion.button>
             
-            <div>
-              <div className="text-sm font-bold text-text-primary">Script Read-Through</div>
-              <div className="text-xs text-text-tertiary">AI Voice Narrator</div>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6, letterSpacing: '-0.02em' }}>
+                Neural Voice Synthesis <Sparkles size={12} color="var(--accent-secondary)" />
+              </div>
+              <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                 Playing Script Audio
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 mx-4 relative h-1 bg-bg-tertiary rounded-full overflow-hidden">
-            <div 
-              className="absolute top-0 left-0 h-full bg-accent-primary" 
-              style={{ width: `${progress}%` }}
-            />
+          {/* Progress Bar */}
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+             <AudioWaveform size={18} color="var(--accent-primary)" className={isPlaying ? 'animate-pulse' : ''} style={{ opacity: isPlaying ? 1 : 0.5 }} />
+             <div style={{ flex: 1, position: 'relative', height: 6, background: 'var(--bg-tertiary)', borderRadius: 100, overflow: 'hidden' }}>
+               <div 
+                 style={{ 
+                   position: 'absolute', top: 0, left: 0, height: '100%', 
+                   background: 'var(--gradient-primary)', 
+                   width: `${progress}%`,
+                   transition: 'width 0.1s linear'
+                 }}
+               />
+             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <a 
               href={currentAudio} 
-              download="script-audio.mp3"
-              className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+              download="neural-audio.mp3"
+              className="glass-hover"
+              style={{ padding: 12, borderRadius: 12, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
               title="Download Audio"
             >
               <Download size={18} />
             </a>
             <button 
               onClick={closePlayer}
-              className="p-2 text-text-tertiary hover:text-red-500 transition-colors"
+              className="glass-hover"
+              style={{ padding: 12, borderRadius: 12, color: 'var(--accent-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
             >
               <X size={18} />
             </button>

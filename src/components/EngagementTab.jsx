@@ -1,210 +1,145 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  MessageSquare, Send, Sparkles, Wand2, Copy, Check, 
-  MessageCircle, AlertCircle, Smile, Shield, Zap, Search,
-  Activity, BarChart3, Filter, Trash2, ChevronDown,
-  Info, TrendingUp, Heart
+  MessageSquare, Wand2, Copy, Check, 
+  MessageCircle, AlertCircle, Smile, Shield, Zap,
+  Activity, BarChart3, TrendingUp, RefreshCw,
+  Sparkles, ChevronRight, Share2, CornerDownRight,
+  ShieldCheck, Brain
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { generateCommentResponses } from '../engine/aiService.js';
 
-const TONES = [
-  { id: 'Supportive', label: 'Supportive', icon: Smile, color: 'var(--accent-success)' },
-  { id: 'Witty', label: 'Witty', icon: Zap, color: 'var(--accent-warning)' },
+const STRATEGIES = [
+  { id: 'Empathetic', label: 'Empathetic', icon: Smile, color: 'var(--accent-success)' },
+  { id: 'Provocative', label: 'Provocative', icon: Zap, color: 'var(--accent-warning)' },
   { id: 'Professional', label: 'Professional', icon: Shield, color: 'var(--accent-secondary)' },
   { id: 'Debunking', label: 'Debunking', icon: AlertCircle, color: 'var(--accent-danger)' }
 ];
 
 export default function EngagementTab() {
-  const { data, topic } = useCreator();
+  const { data, regenerateSection, loading } = useCreator();
   const { addToast } = useToast();
-  const [comment, setComment] = useState('');
-  const [selectedTone, setSelectedTone] = useState('Supportive');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [results, setResults] = useState(null);
-  const [copiedIndex, setCopiedIndex] = useState(null);
+  const [activeStrategy, setActiveStrategy] = useState('Empathetic');
 
-  const handleHandleGenerate = async () => {
-    if (!comment.trim()) {
-      addToast('error', 'Please enter a comment to analyze.');
-      return;
-    }
-    setIsGenerating(true);
-    try {
-      const response = await generateCommentResponses(comment, selectedTone, data?.genome?.dna_snippet);
-      setResults(response);
-      addToast('success', 'Oracle has drafted resonance-optimized responses!');
-    } catch (err) {
-      addToast('error', 'Failed to generate diplomatic responses.');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const engagement = data?.engagement || {};
 
-  const copyToClipboard = (text, index) => {
+  const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    addToast('success', 'Response copied to clipboard!');
-    setTimeout(() => setCopiedIndex(null), 2000);
+    addToast('success', 'Response blueprint captured.');
   };
+
+  if (!engagement || Object.keys(engagement).length === 0) return <EmptyState />;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Engagement Oracle</h2>
-          <p className="tab-subtitle">AI-assisted audience resonance & community diplomacy</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Engagement Logic</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Saturating interaction loops via high-fidelity response architectures</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-           <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px' }}>
-              <Activity size={14} /> Live Audience DNA Active
-           </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+           <button onClick={() => regenerateSection('engagement')} className="btn-secondary" disabled={loading} style={{ padding: '12px' }}>
+              {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+           </button>
         </div>
       </div>
 
-      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        
-        {/* Input Station */}
-        <motion.div 
-           initial={{ opacity: 0, y: 10 }}
-           animate={{ opacity: 1, y: 0 }}
-           className="card" 
-           style={{ padding: 32, background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)' }}
-        >
-           <div style={{ marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                 <MessageSquare size={18} color="var(--accent-primary)" />
-                 <label style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Viewer Intelligence Input</label>
-              </div>
-              <textarea
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Paste a complex viewer comment or question here..."
-                style={{
-                  width: '100%', minHeight: 140, background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 20,
-                  padding: 24, color: 'var(--text-primary)', fontSize: '1rem', lineHeight: 1.6, outline: 'none', resize: 'none',
-                  transition: 'all 0.2s', borderLeft: '4px solid var(--accent-primary)40'
-                }}
-              />
-           </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28 }}>
+         
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            
+            {/* Strategy Selection */}
+            <div className="glass" style={{ padding: '8px', borderRadius: 16, display: 'flex', gap: 8 }}>
+               {STRATEGIES.map(s => (
+                  <button 
+                     key={s.id}
+                     onClick={() => setActiveStrategy(s.id)}
+                     className={`glass glass-hover ${activeStrategy === s.id ? 'glass-strong' : ''}`}
+                     style={{ 
+                        flex: 1, padding: '12px', borderRadius: 12, border: activeStrategy === s.id ? `1px solid ${s.color}` : '1px solid transparent',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer',
+                        color: activeStrategy === s.id ? s.color : 'var(--text-tertiary)',
+                        fontWeight: 850, fontSize: '0.85rem', background: 'transparent'
+                     }}
+                  >
+                     <s.icon size={16} />
+                     <span>{s.label}</span>
+                  </button>
+               ))}
+            </div>
 
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                 {TONES.map(tone => {
-                   const Icon = tone.icon;
-                   const active = selectedTone === tone.id;
-                   return (
-                     <motion.button
-                       key={tone.id}
-                       whileHover={{ y: -2 }}
-                       whileTap={{ scale: 0.98 }}
-                       onClick={() => setSelectedTone(tone.id)}
-                       style={{
-                         display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderRadius: 14,
-                         background: active ? tone.color : 'var(--bg-primary)',
-                         color: active ? '#fff' : 'var(--text-secondary)',
-                         border: '1px solid',
-                         borderColor: active ? 'transparent' : 'var(--border-subtle)',
-                         fontSize: '0.85rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s',
-                         boxShadow: active ? `0 8px 20px ${tone.color}30` : 'none'
-                       }}
-                     >
-                       <Icon size={16} />
-                       {tone.label}
-                     </motion.button>
-                   );
-                 })}
-              </div>
-
-              <button
-                className="shiny-button"
-                onClick={handleHandleGenerate}
-                disabled={isGenerating || !comment.trim()}
-                style={{ padding: '12px 32px', gap: 10 }}
-              >
-                {isGenerating ? <RefreshCw size={20} className="spin" /> : <Wand2 size={20} />}
-                <span>Forge Response</span>
-              </button>
-           </div>
-        </motion.div>
-
-        {/* Results Stream */}
-        <AnimatePresence mode="wait">
-          {results ? (
-            <motion.div 
-               key="results"
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               exit={{ opacity: 0, scale: 0.98 }}
-               style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-            >
-               <div style={{ display: 'flex', alignItems: 'center', gap: 20, padding: '0 8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                     <div style={{ padding: 8, background: 'var(--bg-tertiary)', borderRadius: 10 }}><BarChart3 size={16} color="var(--accent-primary)" /></div>
-                     <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Detected Sentiment</span>
-                  </div>
-                  <div className={`badge ${
-                    results.sentiment === 'Positive' ? 'badge-green' : 
-                    results.sentiment === 'Negative' ? 'badge-red' : 
-                    results.sentiment === 'Constructive' ? 'badge-blue' : 'badge-gold'
-                  }`} style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 900, textTransform: 'uppercase' }}>
-                    {results.sentiment} Resonance
-                  </div>
-               </div>
-
-               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 24 }}>
-                  {results.replies.map((reply, i) => (
-                     <motion.div 
-                       key={i}
-                       initial={{ opacity: 0, scale: 0.95 }}
-                       animate={{ opacity: 1, scale: 1 }}
-                       transition={{ delay: i * 0.1 }}
-                       className="card"
-                       style={{ background: 'var(--bg-secondary)', padding: 32, display: 'flex', flexDirection: 'column', gap: 24, border: '1px solid var(--border-subtle)', position: 'relative' }}
-                     >
-                        <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                           <button 
-                             onClick={() => copyToClipboard(reply.text, i)}
-                             className="btn-mini"
-                             style={{ padding: 10, background: 'var(--bg-tertiary)', color: copiedIndex === i ? 'var(--accent-success)' : 'var(--text-secondary)' }}
-                           >
-                             {copiedIndex === i ? <Check size={18} /> : <Copy size={18} />}
-                           </button>
-                        </div>
-                        
-                        <div style={{ fontSize: '1.1rem', lineHeight: 1.7, color: 'var(--text-primary)', fontWeight: 500 }}>
-                           "{reply.text}"
-                        </div>
-                        
-                        <div style={{ padding: 20, background: 'var(--bg-tertiary)', borderRadius: 18, border: '1px solid var(--border-subtle)' }}>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                              <TrendingUp size={14} color="var(--accent-primary)" />
-                              <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Diplomatic Rationale</span>
+            {/* Response Blueprints */}
+            <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+               {engagement.responses?.[activeStrategy]?.map((res, i) => (
+                  <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className="glass glass-hover" style={{ padding: 32, borderRadius: 28 }}>
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                           <div className="glass" style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: STRATEGIES.find(s=>s.id === activeStrategy)?.color }}>
+                              <MessageSquare size={16} />
                            </div>
-                           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{reply.rationale}</p>
+                           <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Blueprint 0{i + 1}</span>
                         </div>
-                     </motion.div>
-                  ))}
+                        <button onClick={() => copyToClipboard(res)} className="glass-hover" style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 8, borderRadius: 8 }}><Copy size={16} /></button>
+                     </div>
+                     <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.5, margin: 0, fontStyle: 'italic' }}>
+                        "{res}"
+                     </p>
+                  </motion.div>
+               )) || <div className="glass" style={{ padding: 48, textAlign: 'center', color: 'var(--text-tertiary)', fontWeight: 800 }}>Strategy node uninitialized.</div>}
+            </div>
+         </div>
+
+         {/* Interaction Sidebar */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Activity size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Interaction Telemetry</h3>
                </div>
-            </motion.div>
-          ) : !isGenerating && (
-            <motion.div 
-               key="empty"
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               className="card" 
-               style={{ padding: 60, textAlign: 'center', border: '1px dashed var(--border-subtle)', background: 'transparent' }}
-            >
-               <MessageCircle size={48} color="var(--accent-primary)" style={{ opacity: 0.1, marginBottom: 24 }} />
-               <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 12 }}>Awaiting Resonance Mapping</h3>
-               <p style={{ color: 'var(--text-tertiary)', maxWidth: 460, margin: '0 auto' }}>
-                  Paste viewer feedback above to leverage the Oracle's diplomatic intelligence. Maintain brand voice across supportive, professional, and debunking scenarios.
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Viral Saturation</span>
+                     <span style={{ fontWeight: 900, color: 'var(--accent-primary)' }}>84%</span>
+                  </div>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Response Depth</span>
+                     <span style={{ fontWeight: 900, color: 'var(--accent-success)' }}>High</span>
+                  </div>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Conversion Lift</span>
+                     <span style={{ fontWeight: 900, color: 'var(--accent-warning)' }}>+12%</span>
+                  </div>
+               </div>
+            </div>
+
+            <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <Brain size={18} color="var(--accent-primary)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Vibe Check</span>
+               </div>
+               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  High resonance detected for "Self-Deprecating Humor" within the "Viral Variants" module. Recommend applying to active response blueprints.
                </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+         </div>
+
+      </div>
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <div className="glass glass-hover" style={{ maxWidth: 480, padding: 48, borderRadius: 32, textAlign: 'center' }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <MessageCircle size={40} />
+        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Engagement Logic</h3>
+        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>Generate interaction protocols and high-fidelity response architectures focus on recursive audience retention.</p>
       </div>
     </div>
   );

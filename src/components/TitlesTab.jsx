@@ -1,189 +1,99 @@
 import React from 'react';
-import { Type, BarChart2, AlertTriangle, Star, Copy, Shield, Flame, Eye, Lock, Database, Lightbulb, MessageSquare, Zap, Globe, Languages } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { RegenerateButton } from './ui/RegenerateButton';
-import { ExportButton } from './ui/ExportButton';
-import { translateContent } from '../engine/aiService';
-import { useState } from 'react';
-import { useToast } from '../context/ToastContext';
+import { motion } from 'framer-motion';
+import { 
+  Type, BarChart2, AlertTriangle, Star, Copy, Shield, Flame, 
+  Eye, Lock, Database, Lightbulb, MessageSquare, Zap, Globe, Languages,
+  ChevronRight, ExternalLink
+} from 'lucide-react';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { RegenerateButton } from './ui/RegenerateButton.jsx';
 
-const TRIGGER_ICONS = {
-  'Curiosity Gap': Eye,
-  'Authority Challenge': Shield,
-  'Fear of Loss': Lock,
-  'Insider Revelation': Lightbulb,
-  'Data-Driven': Database,
-  'Contrarian': Flame,
-  'Narrative Hook': MessageSquare,
-  'Short-Form Viral': Zap,
-};
-
-const TRIGGER_COLORS = {
-  'Curiosity Gap': { bg: 'rgba(124, 92, 252, 0.12)', color: 'var(--accent-primary)' },
-  'Authority Challenge': { bg: 'rgba(239, 68, 68, 0.12)', color: 'var(--accent-danger)' },
-  'Fear of Loss': { bg: 'rgba(245, 158, 11, 0.12)', color: 'var(--accent-warning)' },
-  'Insider Revelation': { bg: 'rgba(34, 197, 94, 0.12)', color: 'var(--accent-success)' },
-  'Data-Driven': { bg: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent-info)' },
-  'Contrarian': { bg: 'rgba(239, 68, 68, 0.12)', color: 'var(--accent-danger)' },
+const CATEGORY_STYLES = {
+  'Highly Clickable': { bg: 'rgba(124, 92, 252, 0.12)', color: 'var(--accent-primary)' },
+  'Educational/How-to': { bg: 'rgba(34, 197, 94, 0.12)', color: 'var(--accent-success)' },
   'Narrative Hook': { bg: 'rgba(0, 212, 255, 0.12)', color: 'var(--accent-secondary)' },
   'Short-Form Viral': { bg: 'rgba(245, 158, 11, 0.12)', color: 'var(--accent-warning)' },
 };
 
 export default function TitlesTab() {
-  const { data, loading, regenerateSection } = useCreator();
-  const titles = data?.titles;
+  const { data, loading, regenerateSection, topic } = useCreator();
+  const { addToast } = useToast();
+  const titles = data?.titles || [];
 
-  if (!titles) return <EmptyState />;
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    addToast('success', 'Title copied to clipboard!');
+  };
+
+  if (titles.length === 0) return <EmptyState />;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <h2 className="tab-title text-gradient">Title Psychology Engine</h2>
-          <p className="tab-subtitle">Psychologically-optimized titles with CTR predictions and A/B testing sets</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Title Engineering</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Psychological hook variants & predictive click-through mapping</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <div className="language-selector" style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--bg-tertiary)', padding: '4px 8px', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-            <Languages size={14} color="var(--accent-primary)" />
-            <select 
-              value={targetLang}
-              onChange={(e) => handleTranslate(e.target.value)}
-              disabled={isTranslating}
-              style={{ background: 'none', border: 'none', color: 'var(--text-primary)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
-            >
-              {isTranslating ? <option>Translating...</option> : null}
-              {LANGUAGES.map(l => (
-                <option key={l.id} value={l.id}>{l.flag} {l.name}</option>
-              ))}
-            </select>
-          </div>
-          <ExportButton section="titles" data={titles} />
+        <div style={{ display: 'flex', gap: 10 }}>
           <RegenerateButton onClick={() => regenerateSection('titles')} loading={loading} />
         </div>
       </div>
 
-      {/* Title Variants */}
-      <h3 style={{ marginBottom: 'var(--space-md)', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-        Title Variants by Psychological Trigger
-      </h3>
-      <div className="card-grid stagger-children" style={{ marginBottom: 'var(--space-2xl)' }}>
-        {titles.variants.map((v, i) => {
-          const Icon = TRIGGER_ICONS[v.trigger] || Star;
-          const colors = TRIGGER_COLORS[v.trigger] || { bg: 'rgba(124, 92, 252, 0.12)', color: 'var(--accent-primary)' };
-          return (
-            <div key={i} className="title-card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <div className="card-icon" style={{ background: colors.bg, color: colors.color, width: 28, height: 28 }}>
-                  <Icon size={14} />
+      <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 28 }}>
+        {titles.map((t, i) => (
+          <motion.div 
+            key={i} 
+            whileHover={{ y: -6 }}
+            className="glass glass-hover" 
+            style={{ padding: 32, borderRadius: 28, position: 'relative', overflow: 'hidden' }}
+          >
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <span style={{ 
+                  padding: '6px 16px', 
+                  borderRadius: 100, 
+                  fontSize: '0.65rem', 
+                  fontWeight: 900, 
+                  background: CATEGORY_STYLES[t.category]?.bg || 'rgba(255,255,255,0.05)',
+                  color: CATEGORY_STYLES[t.category]?.color || 'var(--text-secondary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em'
+                }}>
+                   {t.category}
+                </span>
+                <button 
+                   onClick={() => handleCopy(t.text)}
+                   className="glass-hover" 
+                   style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', padding: 8, borderRadius: 10, cursor: 'pointer' }}
+                >
+                   <Copy size={16} />
+                </button>
+             </div>
+
+             <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.4, marginBottom: 24 }}>
+                "{t.text}"
+             </h3>
+
+             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                <div className="glass" style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center' }}>
+                   <div style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Viral Score</div>
+                   <div style={{ color: 'var(--accent-primary)', fontWeight: 900, fontSize: '1.1rem' }}>{t.score}%</div>
                 </div>
-                <span className="badge" style={{ background: colors.bg, color: colors.color, borderColor: colors.color.replace(')', ', 0.3)').replace('var(', 'rgba(').replace('--', '') }}>{v.trigger}</span>
-              </div>
-              <div className="title-card-text">{v.title}</div>
-              <div className="title-card-meta">
-                <span className="badge badge-green">{v.ctr}</span>
-                <span className="badge badge-blue">{v.audience}</span>
-              </div>
-              <div className="title-card-reasoning">
-                <strong style={{ color: 'var(--text-secondary)' }}>Why it works:</strong> {v.emotionalTrigger}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* A/B Testing Sets */}
-      <div className="section-divider" />
-      <h3 style={{ marginBottom: 'var(--space-md)', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-        A/B Testing Sets
-      </h3>
-      <div className="card-grid-2 stagger-children" style={{ marginBottom: 'var(--space-2xl)' }}>
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title-group">
-              <div className="card-icon"><Star size={16} /></div>
-              <h3 className="card-title">Primary Candidates</h3>
-            </div>
-            <span className="badge badge-green">Recommended</span>
-          </div>
-          <div className="card-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {titles.abSets.primary.map((t, i) => (
-                <div key={i} style={{ padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-warning)', fontWeight: 800 }}>{85 + (i * 3)}%</span>
-                  </div>
-                  <div className="progress-bg" style={{ height: 4 }}>
-                    <div className="progress-fill" style={{ width: `${85 + (i * 3)}%`, background: 'var(--accent-warning)' }} />
-                  </div>
+                <div className="glass" style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center' }}>
+                   <div style={{ fontSize: '0.6rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Resonance</div>
+                   <div style={{ color: 'var(--accent-success)', fontWeight: 900, fontSize: '1.1rem' }}>High</div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
+             </div>
 
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title-group">
-              <div className="card-icon" style={{ background: 'rgba(239, 68, 68, 0.12)', color: 'var(--accent-danger)' }}><Flame size={16} /></div>
-              <h3 className="card-title">High-Risk / High-Reward</h3>
-            </div>
-            <span className="badge badge-red">Volatile</span>
-          </div>
-          <div className="card-body">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {titles.abSets.highRisk.map((t, i) => (
-                <div key={i} style={{ padding: 12, background: 'var(--bg-tertiary)', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{t}</span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--accent-danger)', fontWeight: 800 }}>{70 + (i * 15)}%</span>
-                  </div>
-                  <div className="progress-bg" style={{ height: 4 }}>
-                    <div className="progress-fill" style={{ width: `${70 + (i * 15)}%`, background: 'var(--accent-danger)' }} />
-                  </div>
+             <div className="glass" style={{ padding: 20, borderRadius: 18, background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                   <Zap size={14} color="var(--accent-warning)" />
+                   <span style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Mechanism</span>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="card card-full">
-          <div className="card-header">
-            <div className="card-title-group">
-              <div className="card-icon" style={{ background: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent-info)' }}><Shield size={16} /></div>
-              <h3 className="card-title">Safe Evergreen</h3>
-            </div>
-            <span className="badge badge-blue">Monetization-safe</span>
-          </div>
-          <div className="card-body">
-            <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>{titles.abSets.safeEvergreen}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Algorithm Sensitivity */}
-      <div className="section-divider" />
-      <h3 style={{ marginBottom: 'var(--space-md)', color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-        Algorithm Sensitivity Check
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-        {titles.algorithmCheck.flaggedWords.map((fw, i) => (
-          <div key={i} className="alert-card warning">
-            <div className="alert-title">⚠️ Flagged: "{fw.word}"</div>
-            <div className="alert-text">{fw.risk}</div>
-            <div className="alert-text" style={{ marginTop: 4, color: 'var(--accent-success)' }}>💡 {fw.suggestion}</div>
-          </div>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{t.rationale || "Utilizes curiosity gap to trigger immediate dopamine response."}</p>
+             </div>
+          </motion.div>
         ))}
-        {titles.algorithmCheck.overusedPhrases.map((p, i) => (
-          <div key={i} className="alert-card info">
-            <div className="alert-title">📊 Overused Phrase</div>
-            <div className="alert-text">{p}</div>
-          </div>
-        ))}
-        <div className="alert-card success">
-          <div className="alert-title">💰 Ad Suitability</div>
-          <div className="alert-text">{titles.algorithmCheck.adSuitability}</div>
-        </div>
       </div>
     </div>
   );
@@ -191,12 +101,14 @@ export default function TitlesTab() {
 
 function EmptyState() {
   return (
-    <div className="tab-content">
-      <div className="empty-state">
-        <div className="empty-state-icon"><Type size={32} /></div>
-        <h3>No Titles Generated</h3>
-        <p>Generate a topic to get psychologically-optimized title variants with CTR predictions and A/B testing sets.</p>
-      </div>
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass glass-hover" style={{ maxWidth: 480, padding: 48, textAlign: 'center', borderRadius: 32 }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Type size={40} />
+        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Title Engineering</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6 }}>Generate high-CTR title variants optimized for algorithmic breakthrough and audience resonance.</p>
+      </motion.div>
     </div>
   );
 }

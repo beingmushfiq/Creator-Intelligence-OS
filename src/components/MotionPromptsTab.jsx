@@ -3,261 +3,184 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Video, Camera, Sun, Zap, Play, 
   RefreshCw, Wand2, Maximize2, Palette,
-  Copy, Check, Share2, Info, Activity
+  Copy, Check, Share2, Info, Activity,
+  ChevronRight, Sparkles, Clock, Layers
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { generateMotionPlan } from '../engine/aiService.js';
 
 export default function MotionPromptsTab() {
-  const { data, loading, topic, script, setData } = useCreator();
+  const { data, setData, topic } = useCreator();
   const { addToast } = useToast();
-  const motionPlan = data?.motionPlan;
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [activeView, setActiveView] = useState('sequence');
-  const [copied, setCopied] = useState(null);
+  
+  const [loading, setLoading] = useState(false);
+  const [copyId, setCopyId] = useState(null);
+  const [selectedPrompt, setSelectedPrompt] = useState(0);
+
+  const prompts = data?.motionPlan?.prompts || [];
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
-    setCopied(id);
-    addToast('success', 'Prompt copied to clipboard!');
-    setTimeout(() => setCopied(null), 2000);
+    setCopyId(id);
+    addToast('success', 'Prompt captured.');
+    setTimeout(() => setCopyId(null), 2000);
   };
 
   const fetchMotionPlan = async () => {
-    if (!topic || !script || isGenerating) return;
-    setIsGenerating(true);
+    if (!topic) {
+      addToast('error', 'Start a project first!');
+      return;
+    }
+    setLoading(true);
     try {
-      const result = await generateMotionPlan(topic, script);
-      setData(prev => ({ ...prev, motionPlan: result }));
-      addToast('success', 'Cinematic motion sequence mapped!');
+      const scriptText = data?.script?.scenes ? JSON.stringify(data.script.scenes) : '';
+      const result = await generateMotionPlan(topic, scriptText);
+      setData(prev => ({
+        ...prev,
+        motionPlan: result
+      }));
+      addToast('success', 'Motion architecture forged.');
     } catch (err) {
-      addToast('error', 'Failed to design cinematic sequence.');
+      addToast('error', 'Forge failed.');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (topic && script && !motionPlan && !loading) {
-      fetchMotionPlan();
-    }
-  }, [topic, script, motionPlan, loading]);
-
-  if (isGenerating) return (
-    <div className="tab-content center-content">
-      <div style={{ textAlign: 'center' }}>
-        <Loader2 size={48} className="spin" color="var(--accent-primary)" style={{ marginBottom: 24 }} />
-        <h3 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Choreographing Sequences</h3>
-        <p style={{ color: 'var(--text-tertiary)' }}>Calculating camera vectors and lighting scripts...</p>
-      </div>
-    </div>
-  );
-
-  if (!script) return (
-    <div className="tab-content center-content">
-      <div className="empty-state" style={{ maxWidth: 500 }}>
-        <div className="empty-state-icon"><Video size={32} /></div>
-        <h3>Script Sequence Required</h3>
-        <p>We need a finalized script to design cinematic camera movements and professional lighting setups.</p>
-      </div>
-    </div>
-  );
-
-  if (!motionPlan) return (
-    <div className="tab-content center-content">
-      <div className="empty-state" style={{ maxWidth: 600 }}>
-        <div className="empty-state-icon"><Camera size={32} /></div>
-        <h3>Motion Architect</h3>
-        <p>Design professional camera movements, lighting scripts, and color grades for "{topic}".</p>
-        <button onClick={fetchMotionPlan} className="shiny-button" style={{ marginTop: 24 }}>
-          <Wand2 size={18} /> Initialize Motion Analysis
+  if (prompts.length === 0) return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass glass-hover" style={{ maxWidth: 540, padding: 48, textAlign: 'center', borderRadius: 32 }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Zap size={40} />
+        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Kinetic Intelligence</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>Generate high-fidelity motion graphics prompts and cinematic camera movements tailored to your script's visual rhythm.</p>
+        <button onClick={fetchMotionPlan} className="btn-primary" style={{ padding: '16px 32px' }}>
+          <Sparkles size={18} /> Materialize Motion Plan
         </button>
-      </div>
+      </motion.div>
     </div>
   );
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Motion Architect</h2>
-          <p className="tab-subtitle">Cinematic staging & visual choreography for {topic}</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Motion Forge</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Cinetic camera orchestration & visual interest prompts</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-           <div className="view-switcher" style={{ background: 'var(--bg-tertiary)', padding: 4, borderRadius: 12, border: '1px solid var(--border-subtle)', display: 'flex' }}>
-              {['sequence', 'lighting'].map(v => (
-                 <button 
-                   key={v}
-                   onClick={() => setActiveView(v)}
-                   style={{ 
-                     fontSize: '0.75rem', fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none',
-                     background: activeView === v ? 'var(--bg-secondary)' : 'transparent',
-                     color: activeView === v ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                     cursor: 'pointer', transition: 'all 0.2s'
-                   }}
-                 >
-                   {v === 'sequence' ? 'Shot Sequence' : 'Lighting & Grade'}
-                 </button>
-              ))}
-           </div>
-           <button onClick={fetchMotionPlan} className="btn-secondary" style={{ padding: '8px 12px' }}>
-              <RefreshCw size={18} />
-           </button>
-        </div>
+        <button onClick={fetchMotionPlan} className="btn-secondary" style={{ padding: '12px 20px' }}>
+          {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+        </button>
       </div>
 
-      {/* Energy Pulse Banner */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="card" 
-        style={{ padding: 24, marginBottom: 24, background: 'linear-gradient(to right, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)', border: '1px solid var(--accent-warning)20' }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Zap size={18} color="var(--accent-warning)" />
-              <h3 style={{ fontSize: '1rem', fontWeight: 800 }}>Global Motion Energy Map</h3>
-           </div>
-           <div className="badge badge-yellow" style={{ fontSize: '0.8rem', fontWeight: 900 }}>{motionPlan.overallEnergy} Intensity</div>
-        </div>
-        <div style={{ height: 60, display: 'flex', alignItems: 'flex-end', gap: 4 }}>
-           {motionPlan.sequences.map((s, i) => (
-              <motion.div 
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${s.energyScore}%` }}
-                transition={{ delay: i * 0.05, duration: 1 }}
-                style={{ 
-                  flex: 1, 
-                  background: s.energyScore > 70 ? 'var(--accent-warning)' : s.energyScore > 40 ? 'var(--accent-primary)' : 'var(--text-tertiary)30',
-                  borderRadius: '4px 4px 0 0',
-                  boxShadow: s.energyScore > 70 ? '0 -4px 12px var(--accent-warning)30' : 'none'
-                }}
-                title={`Scene ${i+1}: ${s.energyScore}%`}
-              />
-           ))}
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: '0.6rem', color: 'var(--text-tertiary)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
-           <span>Opening Hook</span>
-           <span>Narrative Arc</span>
-           <span>The Climax</span>
-        </div>
-      </motion.div>
+      <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 28, alignItems: 'start' }}>
+         
+         {/* Main Viewport */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 40, borderRadius: 32, minHeight: 400, position: 'relative' }}>
+               <AnimatePresence mode="wait">
+                  <motion.div 
+                     key={selectedPrompt}
+                     initial={{ opacity: 0, x: 20 }}
+                     animate={{ opacity: 1, x: 0 }}
+                     exit={{ opacity: 0, x: -20 }}
+                  >
+                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                           <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Camera size={22} />
+                           </div>
+                           <h3 style={{ fontSize: '1.4rem', fontWeight: 900 }}>{prompts[selectedPrompt].sceneName}</h3>
+                        </div>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-secondary)', letterSpacing: '0.1em' }}>PROMPT 0{selectedPrompt + 1}</span>
+                     </div>
 
-      <AnimatePresence mode="wait">
-        {activeView === 'sequence' ? (
-          <motion.div 
-            key="sequence"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
-          >
-             {motionPlan.sequences.map((shot, i) => (
-                <motion.div 
-                  key={i} 
-                  whileHover={{ x: 4, borderColor: 'var(--accent-primary)40' }}
-                  className="card" 
-                  style={{ padding: 24, display: 'flex', alignItems: 'center', gap: 24 }}
-                >
-                   <div style={{ width: 50, height: 50, borderRadius: 14, background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: 'var(--accent-primary)', fontSize: '0.9rem' }}>
-                      {i+1}
-                   </div>
-                   <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                         <h4 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{shot.scene}</h4>
-                         <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>{shot.visualBeat}</span>
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Camera size={14} color="var(--accent-info)" /> {shot.shotType}</div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Maximize2 size={14} color="var(--accent-secondary)" /> {shot.focalLength}</div>
-                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Play size={14} color="var(--accent-success)" /> {shot.movement}</div>
-                      </div>
-                   </div>
-                   <div style={{ display: 'flex', gap: 12 }}>
-                      <div style={{ textAlign: 'right', minWidth: 120 }}>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 800, marginBottom: 4 }}>Lighting Script</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{shot.lighting}</div>
-                      </div>
-                      <button 
-                         onClick={() => handleCopy(`${shot.shotType}, ${shot.movement}, ${shot.lighting}, ${shot.visualBeat}`, `shot-${i}`)}
-                         className="btn-mini" 
-                         title="Copy Runway/Luma Prompt"
-                         style={{ height: 36, width: 36, borderRadius: 10 }}
-                      >
-                         {copied === `shot-${i}` ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                   </div>
-                </motion.div>
-             ))}
-          </motion.div>
-        ) : (
-          <motion.div 
-            key="lighting"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}
-          >
-             <div className="card" style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                   <div style={{ padding: 10, background: 'var(--accent-primary)10', color: 'var(--accent-primary)', borderRadius: 12 }}>
-                      <Palette size={20} />
-                   </div>
-                   <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Cinematic Color Grade</h3>
-                </div>
-                
-                <div style={{ background: 'var(--bg-tertiary)', padding: 24, borderRadius: 20, border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-                   <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 20, textTransform: 'uppercase' }}>{motionPlan.colorGrade.vibe}</div>
-                   <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                      {motionPlan.colorGrade.palette.map((color, i) => (
-                         <div key={i} title={color} style={{ width: 44, height: 44, borderRadius: 12, background: color, border: '2px solid var(--bg-secondary)', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }} />
-                      ))}
-                   </div>
-                </div>
+                     <div className="glass" style={{ padding: 32, borderRadius: 24, background: 'rgba(255,255,255,0.02)', marginBottom: 32 }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', textTransform: 'uppercase', marginBottom: 16, letterSpacing: '0.1em' }}>Prompt Directive</div>
+                        <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 700, lineHeight: 1.6, margin: 0 }}>
+                           "{prompts[selectedPrompt].prompt}"
+                        </p>
+                     </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                   <div style={{ padding: 16, background: 'var(--bg-tertiary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Saturation</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 700 }}>{motionPlan.colorGrade.saturation}</div>
-                   </div>
-                   <div style={{ padding: 16, background: 'var(--bg-tertiary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Contrast View</div>
-                      <div style={{ fontSize: '1rem', fontWeight: 700 }}>High Cinematic</div>
-                   </div>
-                </div>
-                
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
-                   This grade is optimized for high-end digital screens, ensuring your content pops in a cluttered feed without losing dynamic range.
-                </p>
-             </div>
+                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                        <div className="glass" style={{ padding: 24, borderRadius: 20 }}>
+                           <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 12 }}>Visual Style</h4>
+                           <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>{prompts[selectedPrompt].style || "Cinematic 8k, bokeh background"}</p>
+                        </div>
+                        <div className="glass" style={{ padding: 24, borderRadius: 20 }}>
+                           <h4 style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 12 }}>Camera Move</h4>
+                           <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>{prompts[selectedPrompt].cameraMove || "Slow push-in"}</p>
+                        </div>
+                     </div>
+                  </motion.div>
+               </AnimatePresence>
 
-             <div className="card" style={{ padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                   <div style={{ padding: 10, background: 'var(--accent-warning)10', color: 'var(--accent-warning)', borderRadius: 12 }}>
-                      <Sun size={20} />
-                   </div>
-                   <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Atmosphere Script</h3>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                   {motionPlan.sequences.slice(0, 5).map((shot, i) => (
-                      <div key={i} style={{ padding: 16, background: 'var(--bg-tertiary)', borderRadius: 16, border: '1px solid var(--border-subtle)', position: 'relative' }}>
-                         <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: 'var(--accent-warning)', borderRadius: '4px 0 0 4px' }} />
-                         <div style={{ fontSize: '0.7rem', color: 'var(--accent-warning)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Scene {i+1} Lighting</div>
-                         <div style={{ fontSize: '1rem', fontWeight: 700 }}>{shot.lighting}</div>
-                         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: 4 }}>{shot.visualBeat}</div>
-                      </div>
-                   ))}
-                </div>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+               <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 40 }}>
+                  {prompts.map((_, i) => (
+                     <button 
+                        key={i} 
+                        onClick={() => setSelectedPrompt(i)}
+                        style={{ 
+                           width: selectedPrompt === i ? 24 : 10, 
+                           height: 10, 
+                           borderRadius: 5, 
+                           background: selectedPrompt === i ? 'var(--accent-primary)' : 'var(--border-medium)',
+                           border: 'none', cursor: 'pointer', transition: 'all 0.3s'
+                        }} 
+                     />
+                  ))}
+               </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+               <button 
+                  onClick={() => handleCopy(prompts[selectedPrompt].prompt, selectedPrompt)}
+                  className="btn-primary" 
+                  style={{ flex: 1, padding: '16px' }}
+               >
+                  {copyId === selectedPrompt ? <Check size={18} /> : <Copy size={18} />}
+                  <span>Capture Prompt</span>
+               </button>
+               <button className="btn-secondary" style={{ padding: '16px 24px' }}>
+                  <Share2 size={18} />
+               </button>
+            </div>
+         </div>
+
+         {/* Info Sidebar */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Activity size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Motion Stats</h3>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Total Prompts</span>
+                     <span style={{ fontWeight: 900 }}>{prompts.length}</span>
+                  </div>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Visual Energy</span>
+                     <span style={{ fontWeight: 900, color: 'var(--accent-success)' }}>High</span>
+                  </div>
+               </div>
+            </div>
+
+            <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)', color: '#fff', border: 'none' }}>
+               <Palette size={40} style={{ marginBottom: 16, opacity: 0.8 }} />
+               <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: 12 }}>Visual Style Sync</h3>
+               <p style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: 24, lineHeight: 1.6 }}>Apply current Style DNA to all generated motion prompts for consistent visual branding.</p>
+               <button style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: '#fff', color: 'var(--accent-primary)', fontWeight: 900, cursor: 'pointer' }}>
+                  Sync DNA
+               </button>
+            </div>
+         </div>
+
+      </div>
     </div>
   );
 }
-
-const Loader2 = ({ size, className, color, style }) => (
-  <RefreshCw size={size} className={className} color={color} style={style} />
-);

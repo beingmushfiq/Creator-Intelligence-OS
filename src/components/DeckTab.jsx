@@ -3,270 +3,219 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Film, Video, Camera, Layout, Clock, Sparkles, 
   RefreshCw, Download, Play, Image as ImageIcon,
-  Activity, Layers, Zap, Maximize2, ChevronRight,
-  Target, AlertCircle, Info, Trash2
+  Zap, Info, ChevronRight, Maximize2, Activity
 } from 'lucide-react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip as RechartsTooltip, ResponsiveContainer 
-} from 'recharts';
-import { useCreator } from '../context/CreatorContext';
-import { useToast } from '../context/ToastContext';
-import { generateProductionDeck, analyzeVisualPace } from '../engine/aiService';
-import { ExportButton } from './ui/ExportButton';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { generateProductionDeck, analyzeVisualPace } from '../engine/aiService.js';
+import { ExportButton } from './ui/ExportButton.jsx';
 
 export default function DeckTab() {
-  const { data, loading, regenerateSection, setData } = useCreator();
+  const { data, setData, topic } = useCreator();
   const { addToast } = useToast();
   
-  const deck = data?.productionDeck;
-  const script = data?.script;
-  const dnaSnippet = data?.genome?.dna_snippet;
+  const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [selectedSlide, setSelectedSlide] = useState(0);
 
-  const [activeBeat, setActiveBeat] = useState(0);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [analyzingPace, setAnalyzingPace] = useState(false);
+  const deck = data?.deck?.slides || [];
+  const pace = data?.deck?.pace || null;
 
   const handleGenerateDeck = async () => {
-    if (!script) {
-      addToast('error', 'Please generate a script first');
+    if (!topic) {
+      addToast('error', 'Start a project first!');
       return;
     }
-    
-    setIsGenerating(true);
+    setLoading(true);
     try {
-      const scriptText = script.sections.map(s => s.content).join('\n\n');
-      const result = await generateProductionDeck(scriptText, dnaSnippet);
-      
+      const scriptText = data?.script?.scenes ? JSON.stringify(data.script.scenes) : '';
+      const result = await generateProductionDeck(topic, scriptText);
       setData(prev => ({
         ...prev,
-        productionDeck: result
+        deck: { 
+          ...prev.deck, 
+          slides: result.slides,
+          pace: result.pace || prev.deck?.pace 
+        }
       }));
-      addToast('success', 'Production Deck generated!');
+      addToast('success', 'Production deck materialized');
     } catch (err) {
       addToast('error', 'Deck generation failed');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
   const handleAnalyzePace = async () => {
-    if (!deck?.beats) return;
-    setAnalyzingPace(true);
+    setAnalyzing(true);
     try {
-      const result = await analyzeVisualPace(deck.beats, dnaSnippet);
+      const result = await analyzeVisualPace(deck);
       setData(prev => ({
         ...prev,
-        productionDeck: {
-          ...prev.productionDeck,
-          paceAnalysis: result
-        }
+        deck: { ...prev.deck, pace: result }
       }));
-      addToast('success', 'Visual Pace analysis complete');
+      addToast('success', 'Visual rhythm analyzed');
     } catch (err) {
-      addToast('error', 'Pace analysis failed');
+      addToast('error', 'Analysis failed');
     } finally {
-      setAnalyzingPace(false);
+      setAnalyzing(false);
     }
   };
 
-  const paceData = useMemo(() => {
-    if (!deck?.beats) return [];
-    return deck.beats.map((b, i) => ({
-      name: b.timestamp,
-      velocity: 80 + Math.sin(i) * 20,
-      threshold: 75
-    }));
-  }, [deck]);
-
-  if (!deck && !loading && !isGenerating) {
-    return (
-      <div className="tab-content center-content">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="empty-state" 
-          style={{ maxWidth: 600 }}
-        >
-           <div className="empty-state-icon" style={{ background: 'var(--accent-secondary)15', color: 'var(--accent-secondary)' }}>
-              <Film size={32} />
-           </div>
-           <h3>Production Deck Visualizer</h3>
-           <p>Transform your script into a cinematic, beat-by-beat storyboard with professional direction and visual pacing.</p>
-           <button onClick={handleGenerateDeck} className="shiny-button" style={{ marginTop: 24, padding: '16px 32px' }}>
-              <Zap size={18} />
-              <span>Initialize Storyboard Engine</span>
-           </button>
-        </motion.div>
-      </div>
-    );
-  }
-
-  if (isGenerating) {
-    return (
-      <div className="tab-content center-content">
-        <div style={{ textAlign: 'center' }}>
-           <RefreshCw size={48} className="spin" color="var(--accent-primary)" style={{ marginBottom: 24 }} />
-           <h3 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Synthesizing Production Deck</h3>
-           <p style={{ color: 'var(--text-tertiary)' }}>Calculating visual beats, aspect ratios, and cinematographic cues...</p>
+  if (deck.length === 0) return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass glass-hover" style={{ maxWidth: 540, padding: 48, textAlign: 'center', borderRadius: 32 }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Layout size={40} />
         </div>
-      </div>
-    );
-  }
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Production Director</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>Transform your script into a cinematic production deck with visual cues, staging notes, and rhythm analysis.</p>
+        <button onClick={handleGenerateDeck} className="btn-primary" style={{ padding: '16px 32px' }}>
+          <Sparkles size={18} /> Initialize Production Deck
+        </button>
+      </motion.div>
+    </div>
+  );
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Production Deck</h2>
-          <p className="tab-subtitle">Cinematic storyboard grid & visual velocity mapping</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Director's Deck</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Cinematic staging, visual rhythm & production intelligence</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={handleAnalyzePace} disabled={analyzingPace} className="btn-secondary" style={{ fontSize: '0.8rem' }}>
-             <Activity size={14} className={analyzingPace ? 'spin' : ''} />
-             <span>Visual Pacing</span>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <ExportButton section="deck" data={data?.deck} />
+          <button onClick={handleGenerateDeck} className="btn-secondary" disabled={loading} style={{ padding: '12px 20px' }}>
+            {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
           </button>
-          <button onClick={handleGenerateDeck} className="btn-secondary" style={{ fontSize: '0.8rem' }}>
-             <RefreshCw size={14} />
-             <span>Regenerate</span>
-          </button>
-          <ExportButton section="productionDeck" data={deck} />
         </div>
       </div>
 
-      <div className="deck-layout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24, alignItems: 'start' }}>
+      <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 28, alignItems: 'start' }}>
         
-        {/* Storyboard Grid */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                 <Layout size={18} color="var(--text-tertiary)" />
-                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Keyframe Sequence</h3>
+        {/* Slides Viewport */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+           <div className="glass" style={{ padding: 40, borderRadius: 32, minHeight: 480, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 32, right: 32 }}>
+                 <div className="glass" style={{ padding: '6px 16px', borderRadius: 100, fontSize: '0.7rem', fontWeight: 900, color: 'var(--accent-primary)', letterSpacing: '0.1em' }}>
+                    SCENE {selectedSlide + 1} OF {deck.length}
+                 </div>
               </div>
-              <span className="badge badge-primary">{deck.beats.length} Visual Beats</span>
+
+              <AnimatePresence mode="wait">
+                 <motion.div 
+                    key={selectedSlide}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                 >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                       <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Video size={22} />
+                       </div>
+                       <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{deck[selectedSlide].sceneName}</h3>
+                    </div>
+
+                    <div className="glass" style={{ padding: 32, borderRadius: 24, background: 'rgba(255,255,255,0.02)', marginBottom: 32 }}>
+                       <div style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12 }}>Visual Execution</div>
+                       <p style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.6, margin: 0 }}>
+                          {deck[selectedSlide].visualCues}
+                       </p>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                       <div className="glass" style={{ padding: 24, borderRadius: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                             <Camera size={16} color="var(--accent-secondary)" />
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Camera Move</span>
+                          </div>
+                          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>{deck[selectedSlide].cameraMove || "Static wide shot with slow push-in"}</p>
+                       </div>
+                       <div className="glass" style={{ padding: 24, borderRadius: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                             <Clock size={16} color="var(--accent-warning)" />
+                             <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Duration</span>
+                          </div>
+                          <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>{deck[selectedSlide].duration || "2.5s"}</p>
+                       </div>
+                    </div>
+                 </motion.div>
+              </AnimatePresence>
+
+              {/* Navigation Dot Indicators */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 40 }}>
+                 {deck.map((_, i) => (
+                    <button 
+                       key={i} 
+                       onClick={() => setSelectedSlide(i)}
+                       style={{ 
+                          width: selectedSlide === i ? 24 : 10, 
+                          height: 10, 
+                          borderRadius: 5, 
+                          background: selectedSlide === i ? 'var(--accent-primary)' : 'var(--border-medium)',
+                          border: 'none', cursor: 'pointer', transition: 'all 0.3s'
+                       }} 
+                    />
+                 ))}
+              </div>
            </div>
 
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 16 }}>
-             {deck.beats.map((beat, i) => (
-               <motion.div 
-                 key={i}
-                 initial={{ opacity: 0, scale: 0.9 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 transition={{ delay: i * 0.05 }}
-                 onClick={() => setActiveBeat(i)}
-                 className={`card storyboard-card ${activeBeat === i ? 'active' : ''}`}
-                 style={{ 
-                   padding: 12, overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                   borderWidth: 2, borderColor: activeBeat === i ? 'var(--accent-primary)' : 'var(--border-subtle)',
-                   background: activeBeat === i ? 'var(--accent-primary)05' : 'var(--bg-secondary)'
-                 }}
-               >
-                  <div style={{ 
-                    width: '100%', aspectRatio: '16/9', background: 'var(--bg-tertiary)', borderRadius: 8, 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)30',
-                    position: 'relative', overflow: 'hidden', border: '1px solid var(--border-subtle)'
-                  }}>
-                     <ImageIcon size={24} />
-                     <div style={{ position: 'absolute', top: 6, left: 6, fontSize: '0.6rem', fontWeight: 900, padding: '2px 6px', background: 'rgba(0,0,0,0.5)', borderRadius: 4, color: 'white', letterSpacing: '0.05em' }}>
-                        {beat.timestamp}
-                     </div>
-                  </div>
-                  <div style={{ marginTop: 10 }}>
-                     <div style={{ fontSize: '0.65rem', color: 'var(--accent-primary)', fontWeight: 800, marginBottom: 2, textTransform: 'uppercase' }}>Beat {i + 1}</div>
-                     <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', height: 32, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                        {beat.scriptBeat}
-                     </p>
-                  </div>
-               </motion.div>
-             ))}
+           {/* Scene Ribbon */}
+           <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 12, scrollbarWidth: 'none' }}>
+              {deck.map((s, i) => (
+                 <motion.div 
+                    key={i}
+                    onClick={() => setSelectedSlide(i)}
+                    whileHover={{ y: -4 }}
+                    className={`glass glass-hover ${selectedSlide === i ? 'glass-strong' : ''}`}
+                    style={{ 
+                      flexShrink: 0, width: 220, padding: 20, borderRadius: 20, cursor: 'pointer',
+                      border: selectedSlide === i ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)'
+                    }}
+                 >
+                    <div style={{ fontSize: '0.65rem', fontWeight: 950, color: 'var(--text-tertiary)', marginBottom: 8 }}>SCENE {i + 1}</div>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 700, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.sceneName}</p>
+                 </motion.div>
+              ))}
            </div>
         </div>
 
-        {/* Intelligence Panel */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24, position: 'sticky', top: 24 }}>
-           <AnimatePresence mode="wait">
-             <motion.div 
-               key={activeBeat}
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               className="card"
-               style={{ padding: 32, border: '1px solid var(--accent-primary)20', background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)' }}
-             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--accent-primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900 }}>
-                         {activeBeat + 1}
-                      </div>
-                      <div>
-                         <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Frame Insight</h3>
-                         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Production Cue - {deck.beats[activeBeat].timestamp}</div>
-                      </div>
-                   </div>
-                   <button className="btn-mini"><Maximize2 size={16} /></button>
-                </div>
+        {/* Intelligence Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+           <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+                 <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Activity size={22} />
+                 </div>
+                 <h3 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Visual Rhythm</h3>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                 <div className="glass" style={{ padding: 24, borderRadius: 20, borderLeft: '4px solid var(--accent-primary)' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>Pacing Score</div>
+                    <div style={{ fontSize: '2.5rem', fontWeight: 950 }}>{pace?.score || 92}%</div>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 8 }}>Visual energy matches market velocity standards.</p>
+                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                   <div>
-                      <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Visual Prompt (AI Optimization)</label>
-                      <div style={{ padding: 16, background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border-subtle)', fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                        "{deck.beats[activeBeat].visualPrompt}"
-                      </div>
-                   </div>
+                 <button onClick={handleAnalyzePace} className="btn-secondary" style={{ width: '100%', padding: '14px' }}>
+                    {analyzing ? <RefreshCw className="animate-spin" size={16} /> : <Wand2 size={16} />}
+                    <span>Recalculate Energy</span>
+                 </button>
+              </div>
+           </div>
 
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div style={{ padding: 16, background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                         <Camera size={14} color="var(--accent-primary)" style={{ marginBottom: 12 }} />
-                         <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Cinematography</div>
-                         <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{deck.beats[activeBeat].direction.camera}</div>
-                      </div>
-                      <div style={{ padding: 16, background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                         <Zap size={14} color="var(--accent-warning)" style={{ marginBottom: 12 }} />
-                         <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4 }}>Motion Intensity</div>
-                         <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{deck.beats[activeBeat].direction.motion}</div>
-                      </div>
-                   </div>
-
-                   <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                         <label style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Visual Velocity Map</label>
-                         <span style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 800 }}>82% Pacing Efficiency</span>
-                      </div>
-                      <div style={{ height: 120, width: '100%', background: 'var(--bg-primary)50', borderRadius: 16, padding: 10, border: '1px solid var(--border-subtle)' }}>
-                         <ResponsiveContainer width="100%" height="100%">
-                           <AreaChart data={paceData}>
-                             <defs>
-                               <linearGradient id="colorVel" x1="0" y1="0" x2="0" y2="1">
-                                 <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.3}/>
-                                 <stop offset="95%" stopColor="var(--accent-primary)" stopOpacity={0}/>
-                               </linearGradient>
-                             </defs>
-                             <Area 
-                               type="monotone" 
-                               dataKey="velocity" 
-                               stroke="var(--accent-primary)" 
-                               fillOpacity={1} 
-                               fill="url(#colorVel)" 
-                               strokeWidth={3}
-                             />
-                           </AreaChart>
-                         </ResponsiveContainer>
-                      </div>
-                   </div>
-
-                   {deck.paceAnalysis && (
-                     <div style={{ padding: 20, background: 'var(--accent-danger)05', border: '1px solid var(--accent-danger)20', borderRadius: 16, display: 'flex', gap: 12 }}>
-                        <AlertCircle size={20} color="var(--accent-danger)" style={{ flexShrink: 0 }} />
-                        <div>
-                           <div style={{ fontSize: '0.75rem', fontWeight: 900, color: 'var(--accent-danger)', textTransform: 'uppercase', marginBottom: 4 }}>Retention Risk Detected</div>
-                           <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{deck.paceAnalysis.analysis}</p>
-                        </div>
-                     </div>
-                   )}
-                </div>
-             </motion.div>
-           </AnimatePresence>
+           <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)', color: '#fff', border: 'none' }}>
+              <Play size={40} style={{ marginBottom: 16, opacity: 0.8 }} />
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: 12 }}>Pre-Production Sync</h3>
+              <p style={{ fontSize: '0.85rem', opacity: 0.9, marginBottom: 24, lineHeight: 1.6 }}>Initialize visual asset generation for all scene cues to begin production phase.</p>
+              <button style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: '#fff', color: 'var(--accent-primary)', fontWeight: 900, cursor: 'pointer' }}>
+                 Begin Production
+              </button>
+           </div>
         </div>
+
       </div>
     </div>
   );

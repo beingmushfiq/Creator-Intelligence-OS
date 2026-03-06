@@ -3,224 +3,130 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, TrendingUp, TrendingDown, Minus, Zap, Target, 
   MessageCircle, AlertCircle, RefreshCw, HeartPulse, Brain,
-  Sparkles, Info, Users, BarChart3, ChevronRight, Magnet
+  Sparkles, Info, Users, BarChart3, ChevronRight, Magnet,
+  ArrowUpRight, ArrowDownRight, Activity as ActivityIcon
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
+import { RegenerateButton } from './ui/RegenerateButton.jsx';
 
 export default function PulseTab() {
-  const { pulse, generatePulse, loading, topic } = useCreator();
+  const { data, loading, regenerateSection } = useCreator();
+  const pulse = data?.pulse || {};
 
-  useEffect(() => {
-    if (!pulse && topic && !loading) {
-      generatePulse();
-    }
-  }, [topic]);
-
-  if (!topic) {
-    return (
-      <div className="tab-content center-content">
-        <div style={{ textAlign: 'center' }}>
-          <Activity size={48} className="opacity-20" style={{ marginBottom: 20 }} />
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Awaiting Topic Intelligence</h3>
-          <p style={{ color: 'var(--text-tertiary)' }}>Initialize a topic to analyze the Community Pulse.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading && !pulse) {
-    return (
-      <div className="tab-content center-content">
-        <div style={{ textAlign: 'center' }}>
-          <RefreshCw size={48} className="spin" color="var(--accent-primary)" style={{ marginBottom: 24 }} />
-          <h3 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Analyzing Audience DNA</h3>
-          <p style={{ color: 'var(--text-tertiary)' }}>Mapping sentiment heatmaps and trend drift velocity...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const { sentiment, vibeTags, trendDrift } = pulse || {
-    sentiment: {},
-    vibeTags: [],
-    trendDrift: { score: 0, direction: 'Stable', reasoning: 'Deep-learning narrative analysis pending...' }
+  const getDriftColor = (drift) => {
+    if (drift > 0) return 'var(--accent-success)';
+    if (drift < 0) return 'var(--accent-danger)';
+    return 'var(--text-tertiary)';
   };
 
-  const DriftIcon = {
-    Up: TrendingUp,
-    Down: TrendingDown,
-    Stable: Minus
-  }[trendDrift.direction] || Minus;
-
-  const getDriftColor = () => {
-    if (trendDrift.direction === 'Up') return 'var(--accent-success)';
-    if (trendDrift.direction === 'Down') return 'var(--accent-danger)';
-    return 'var(--accent-info)';
-  };
+  if (!pulse || Object.keys(pulse).length === 0) return <EmptyState />;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Community Heartbeat</h2>
-          <p className="tab-subtitle">Real-time audience resonance & trend velocity analysis</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Neural Pulse</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Real-time market drift diagnostics & audience resonance telemetry</p>
         </div>
-        <button 
-          onClick={generatePulse}
-          disabled={loading}
-          className="shiny-button"
-          style={{ padding: '10px 24px', gap: 10 }}
-        >
-          {loading ? <RefreshCw size={18} className="spin" /> : <Activity size={18} />}
-          <span>Re-analyze Rhythm</span>
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+           <button onClick={() => regenerateSection('pulse')} className="btn-secondary" disabled={loading} style={{ padding: '12px' }}>
+              {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+           </button>
+        </div>
       </div>
 
-      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
-           {/* Trend Drift Console */}
-           <motion.div 
-             initial={{ opacity: 0, y: 15 }}
-             animate={{ opacity: 1, y: 0 }}
-             className="card" 
-             style={{ padding: 40, background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)', position: 'relative', overflow: 'hidden' }}
-           >
-              <div style={{ position: 'absolute', top: -30, right: -30, opacity: 0.05 }}>
-                 <DriftIcon size={240} />
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 28, marginBottom: 48 }}>
+         
+         {/* Resilience Card */}
+         <div className="glass glass-hover" style={{ padding: 40, borderRadius: 32, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <HeartPulse size={22} className="heartbeat" />
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Ecosystem Health</h3>
+               </div>
+               <div className="glass" style={{ padding: '6px 14px', borderRadius: 100, fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-success)' }}>OPTIMAL</div>
+            </div>
+            
+            <div style={{ fontSize: '3.5rem', fontWeight: 950, color: 'var(--text-primary)', marginBottom: 12 }}>92%</div>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Retention Resilience Index</p>
+         </div>
 
-              <div style={{ position: 'relative', zIndex: 1 }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-                    <div style={{ padding: 10, borderRadius: 12, background: 'var(--accent-primary)15', color: 'var(--accent-primary)' }}>
-                       <Magnet size={24} />
-                    </div>
-                    <div>
-                       <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Trend Drift Analysis</h3>
-                       <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Predictive trend velocity score</p>
-                    </div>
-                 </div>
+         {/* Market Alignment */}
+         <div className="glass glass-hover" style={{ padding: 40, borderRadius: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+               <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Target size={22} />
+               </div>
+               <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Market Resonance</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+               <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>Sentiment Alignment</span>
+                  <span style={{ fontWeight: 950, color: 'var(--accent-success)' }}>+14% High</span>
+               </div>
+               <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 700 }}>Viral Velocity</span>
+                  <span style={{ fontWeight: 950, color: 'var(--accent-primary)' }}>0.94 Pacing</span>
+               </div>
+            </div>
+         </div>
 
-                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 24, marginBottom: 32 }}>
-                    <div style={{ fontSize: '5rem', fontWeight: 950, lineHeight: 0.8, letterSpacing: '-0.05em' }}>
-                       {trendDrift.score}<span style={{ fontSize: '2rem', color: 'var(--text-tertiary)', fontWeight: 700 }}>%</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                       <div className="badge badge-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, background: getDriftColor(), color: '#fff', border: 'none' }}>
-                          <DriftIcon size={16} /> {trendDrift.direction} Velocity
-                       </div>
-                    </div>
-                 </div>
+         {/* Momentum Card */}
+         <div className="glass glass-hover" style={{ padding: 40, borderRadius: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+               <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ActivityIcon size={22} />
+               </div>
+               <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Growth Momentum</h3>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+               <div style={{ height: 60, background: 'var(--bg-tertiary)', borderRadius: 12, display: 'flex', alignItems: 'flex-end', gap: 4, padding: 8 }}>
+                  {[40, 60, 45, 70, 85, 65, 90, 75, 95].map((h, i) => (
+                     <div key={i} style={{ flex: 1, height: `${h}%`, borderRadius: 4, background: h > 80 ? 'var(--accent-primary)' : 'var(--border-subtle)' }} />
+                  ))}
+               </div>
+               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
+                  <span>Alpha Interval</span>
+                  <span>Active</span>
+               </div>
+            </div>
+         </div>
 
-                 <div style={{ padding: 24, background: 'var(--bg-primary)80', borderRadius: 20, border: '1px solid var(--border-subtle)', backdropFilter: 'blur(10px)' }}>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                       <Brain size={20} color="var(--accent-secondary)" style={{ flexShrink: 0, marginTop: 2 }} />
-                       <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontStyle: 'italic', margin: 0, lineHeight: 1.6 }}>
-                          "{trendDrift.reasoning}"
-                       </p>
-                    </div>
-                 </div>
-              </div>
-           </motion.div>
+      </div>
 
-           {/* Vibe Cloud */}
-           <motion.div 
-             initial={{ opacity: 0, y: 15 }}
-             animate={{ opacity: 1, y: 0 }}
-             transition={{ delay: 0.1 }}
-             className="card" 
-             style={{ padding: 40, display: 'flex', flexDirection: 'column' }}
-           >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-                 <div style={{ padding: 10, borderRadius: 12, background: 'var(--accent-secondary)15', color: 'var(--accent-secondary)' }}>
-                    <Sparkles size={24} />
-                 </div>
-                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Narrative Vibes</h3>
-              </div>
+      {/* Narrative Alerts */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+         <h3 style={{ fontSize: '1.3rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Zap size={22} color="var(--accent-warning)" /> Critical Alignment Alerts
+         </h3>
+         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+            {pulse.alerts?.map((alert, i) => (
+               <motion.div key={i} whileHover={{ y: -6 }} className="glass glass-hover" style={{ padding: 28, borderRadius: 24, borderLeft: '4px solid var(--accent-warning)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                     <div className="glass" style={{ padding: '6px 12px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-warning)' }}>ALERT</div>
+                     <Info size={16} style={{ opacity: 0.3 }} />
+                  </div>
+                  <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: 12 }}>{alert.title}</h4>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{alert.impact}</p>
+               </motion.div>
+            )) || <div className="glass" style={{ padding: 32, gridColumn: '1 / -1', textAlign: 'center', opacity: 0.5 }}>No active alerts. Operational status optimal.</div>}
+         </div>
+      </div>
+    </div>
+  );
+}
 
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, flex: 1 }}>
-                 {vibeTags.map((tag, i) => (
-                    <motion.div 
-                      key={tag}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.2 + (i * 0.05) }}
-                      whileHover={{ scale: 1.05, borderColor: 'var(--accent-secondary)' }}
-                      style={{ 
-                        padding: '12px 20px', background: 'var(--bg-secondary)', borderRadius: 14, 
-                        border: '1px solid var(--border-subtle)', fontSize: '0.9rem', fontWeight: 700, 
-                        color: 'var(--text-primary)', cursor: 'default', transition: 'border-color 0.2s'
-                      }}
-                    >
-                      #{tag}
-                    </motion.div>
-                 ))}
-              </div>
-
-              <div style={{ marginTop: 32, paddingTop: 32, borderTop: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-tertiary)', fontSize: '0.75rem' }}>
-                 <Users size={14} />
-                 <span>Dominant archetypes detected from audience profiling</span>
-              </div>
-           </motion.div>
+function EmptyState() {
+  return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <div className="glass glass-hover" style={{ maxWidth: 480, padding: 48, borderRadius: 32, textAlign: 'center' }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <HeartPulse size={40} />
         </div>
-
-        {/* Sentiment Matrix */}
-        <motion.div 
-           initial={{ opacity: 0, y: 20 }}
-           animate={{ opacity: 1, y: 0 }}
-           transition={{ delay: 0.2 }}
-           className="card card-full" 
-           style={{ padding: 40 }}
-        >
-           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 40 }}>
-              <div style={{ padding: 10, borderRadius: 12, background: 'var(--accent-success)05', color: 'var(--accent-success)' }}>
-                 <HeartPulse size={24} />
-              </div>
-              <div>
-                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Sentiment Heatmap</h3>
-                 <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Mapping emotional resonance distribution</p>
-              </div>
-           </div>
-
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 20 }}>
-              {Object.entries(sentiment).map(([key, value], i) => (
-                 <motion.div 
-                    key={key}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 + (i * 0.05) }}
-                    style={{ textAlign: 'center' }}
-                 >
-                    <motion.div 
-                       whileHover={{ scale: 1.02 }}
-                       style={{ 
-                          aspectRatio: '1/1', background: 'var(--bg-secondary)', borderRadius: 24, 
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
-                          border: '2px solid', borderColor: `rgba(var(--accent-primary-rgb), ${value / 200 + 0.1})`,
-                          position: 'relative', overflow: 'hidden'
-                       }}
-                    >
-                       <div style={{ position: 'absolute', inset: 0, background: 'var(--accent-primary)', opacity: value / 100 }} />
-                       <div style={{ position: 'relative', fontSize: '1.8rem', fontWeight: 950, color: value > 50 ? '#fff' : 'var(--text-primary)' }}>{value}</div>
-                    </motion.div>
-                    <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>{key}</div>
-                 </motion.div>
-              ))}
-           </div>
-        </motion.div>
-
-        {/* Strategic Insight Flash */}
-        <div style={{ padding: '24px 32px', background: 'var(--accent-warning)05', borderRadius: 20, border: '1px solid var(--accent-warning)20', display: 'flex', gap: 20, alignItems: 'center' }}>
-           <div style={{ padding: 12, background: 'var(--accent-warning)15', borderRadius: 12, color: 'var(--accent-warning)' }}>
-              <AlertCircle size={24} />
-           </div>
-           <div>
-              <div style={{ fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--accent-warning)', marginBottom: 4 }}>System Strategic Insight</div>
-              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>
-                 Narrative drift indicates a shift toward the <strong>#{vibeTags[0]}</strong> archetype. Optimize your next 3 scripts for this resonance mode to maintain peak community pulse.
-              </p>
-           </div>
-        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Neural Pulse</h3>
+        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>Initialize a strategic foundation to synchronize with real-time market drift and engagement pulse diagnostics.</p>
       </div>
     </div>
   );

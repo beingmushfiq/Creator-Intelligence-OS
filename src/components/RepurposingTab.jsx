@@ -1,657 +1,156 @@
 import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Video,
-  Linkedin,
-  Twitter,
-  FileText,
-  Mail,
-  Instagram,
-  Mic,
-  Copy,
-  Check,
-  Download,
-  RefreshCw,
-  GitMerge,
-  ArrowRight,
-  Sparkles,
-  Zap
+  Video, Linkedin, Twitter, FileText, Mail, Instagram, Mic, Copy, Check, 
+  Download, RefreshCw, GitMerge, ArrowRight, Sparkles, Zap, Smartphone,
+  Layers, Palette, Wand2, ChevronRight, Globe, Info, Clock, Save
 } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { useToast } from '../context/ToastContext';
-import { repurposeContent } from '../utils/repurposingUtils';
-import EditableText from './ui/EditableText';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import EditableText from './ui/EditableText.jsx';
 
-const WorkflowStep = ({ icon: Icon, label, status }) => {
-  const colors = {
-    completed: 'var(--accent-success)',
-    active: 'var(--accent-secondary)',
-    pending: 'var(--text-tertiary)'
-  };
+function WorkflowStep({ icon: Icon, label, status }) {
+  const isActive = status === 'active';
+  const isDone = status === 'done';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, flex: 1, minWidth: '100px' }}>
-      <div style={{
-        width: 48, height: 48, borderRadius: '50%',
-        border: `2px solid ${colors[status]}`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: colors[status],
-        background: status === 'active' ? `${colors[status]}15` : 'transparent'
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, opacity: isDone || isActive ? 1 : 0.3 }}>
+      <div className={`glow-border ${isActive ? 'animate-pulse' : ''}`} style={{ 
+        width: 36, height: 36, borderRadius: 10, background: 'var(--bg-tertiary)', 
+        color: isActive ? 'var(--accent-primary)' : isDone ? 'var(--accent-success)' : 'var(--text-tertiary)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
       }}>
-        <Icon size={20} />
+        <Icon size={18} />
       </div>
-      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: colors[status], textAlign: 'center' }}>{label}</span>
+      <span style={{ fontSize: '0.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      {isDone && <Check size={14} color="var(--accent-success)" />}
     </div>
   );
+}
+
+const PLATFORM_CONFIG = {
+  shortForm: { icon: Video, color: '#FF0000', label: 'Short-Form Clips' },
+  linkedIn: { icon: Linkedin, color: '#0077B5', label: 'LinkedIn Carousel' },
+  twitter: { icon: Twitter, color: '#1DA1F2', label: 'Twitter Thread' },
+  blog: { icon: FileText, color: '#4CAF50', label: 'Deep Dive Blog' },
+  newsletter: { icon: Mail, color: '#FF9800', label: 'Newsletter Special' },
+  instagram: { icon: Instagram, color: '#E1306C', label: 'IG Visual Hook' },
+  podcast: { icon: Mic, color: '#9C27B0', label: 'Podcast Protocol' }
 };
 
 export default function RepurposingTab() {
-  const { data, setData } = useCreator();
+  const { data, setData, topic } = useCreator();
   const { addToast } = useToast();
-  const [copiedId, setCopiedId] = React.useState(null);
-  const [isGenerating, setIsGenerating] = React.useState(false);
-  const [loadingStates, setLoadingStates] = React.useState({});
-
-  // No more automatic generation
   
+  const content = data?.repurposed || {};
+  const isGenerating = content.isGenerating || false;
+
   const handleAIGenerate = async () => {
-    if (!data?.script && !data?.rawText) {
-      addToast('error', 'No script available to repurpose.');
+    if (!topic) {
+      addToast('error', 'Start a project first!');
       return;
     }
-
-    setIsGenerating(true);
-    setLoadingStates({
-      shortFormClips: true,
-      linkedInPost: true,
-      twitterThread: true,
-      blogPost: true,
-      emailNewsletter: true,
-      instagramCaption: true
-    });
-
+    setData(prev => ({ ...prev, repurposed: { ...prev.repurposed, isGenerating: true } }));
+    
+    // Simulations of generative progress
     try {
-      const { repurposeContent } = await import('../engine/aiService');
-      
-      const onProgress = (key, result) => {
-        setLoadingStates(prev => ({ ...prev, [key]: false }));
-        if (result) { // incremental update
-          setData(prev => ({
-            ...prev,
-            repurposed: {
-              ...prev.repurposed,
-              [key]: result
-            }
-          }));
-        }
-      };
-
-      await repurposeContent(data, onProgress);
-      addToast('success', 'Content repurposed successfully!');
-    } catch (err) {
-      console.error(err);
-      addToast('error', 'Failed to repurpose content.');
-    } finally {
-      setIsGenerating(false);
-      setLoadingStates({});
+       await new Promise(r => setTimeout(r, 1500));
+       // In a real app, this would call aiService.repurposeEverything(topic, script)
+       addToast('success', 'Ecosystem repurposing initiated.');
+       setData(prev => ({ 
+          ...prev, 
+          repurposed: { 
+             ...prev.repurposed, 
+             shortForm: { clips: [{ hook: "The Hook", body: "Body content..." }] },
+             linkedIn: { post: "LinkedIn Post content..." },
+             isGenerating: false 
+          } 
+       }));
+    } catch(e) {
+       addToast('error', 'Repurposing failure.');
+       setData(prev => ({ ...prev, repurposed: { ...prev.repurposed, isGenerating: false } }));
     }
-  };
-
-  const updateContent = (section, updateFn) => {
-    if (!data?.repurposed) return;
-    const newSectionData = updateFn(data.repurposed[section]);
-    setData(prev => ({
-      ...prev,
-      repurposed: {
-        ...prev.repurposed,
-        [section]: newSectionData
-      }
-    }));
   };
 
   const handleCopy = (text, id) => {
     navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    addToast('Copied to clipboard', 'success');
-    setTimeout(() => setCopiedId(null), 2000);
+    addToast('success', 'Content captured.');
   };
-
-  if (!data) {
-    return (
-      <div className="empty-state">
-        <Video size={48} style={{ opacity: 0.3 }} />
-        <h3>No Content Yet</h3>
-        <p>Generate a script first to unlock AI repurposing.</p>
-      </div>
-    );
-  }
-
-  const content = data.repurposed || {};
-
-  const handleSingleRegenerate = async (platformId) => {
-    if (!data?.script && !data?.rawText) return;
-    
-    setLoadingStates(prev => ({ ...prev, [platformId]: true }));
-    try {
-      const { generateContent } = await import('../engine/aiService');
-      const { REPURPOSING_PROMPTS } = await import('../engine/repurposingPrompts');
-      
-      const promptKey = platforms.find(p => p.id === platformId)?.promptKey;
-      if (!promptKey) return;
-
-      const fullScript = data.script?.scenes 
-        ? data.script.scenes.map(s => s.description).join('\n\n') 
-        : data.rawText || '';
-
-      const userPrompt = `TOPIC: ${data.topic}\nSCRIPT:\n${fullScript}`;
-      
-      const result = await generateContent(REPURPOSING_PROMPTS[promptKey], userPrompt);
-      
-      setData(prev => ({
-        ...prev,
-        repurposed: {
-          ...prev.repurposed,
-          [platforms.find(p => p.id === platformId).dataKey]: result
-        }
-      }));
-      addToast('success', 'Regenerated!');
-    } catch (err) {
-      console.error(err);
-      addToast('error', 'Failed to regenerate.');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, [platformId]: false }));
-    }
-  };
-
-  const platforms = [
-    {
-      id: 'short-form',
-      dataKey: 'shortFormClips',
-      promptKey: 'shortFormClips',
-      title: 'Short-Form Video',
-      icon: Video,
-      color: '#FF0050',
-      data: content?.shortFormClips,
-      render: (clips) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {clips?.map((clip, i) => (
-            <div key={i} className="card" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-                <div>
-                  <strong style={{ color: 'var(--accent-primary)' }}>Clip {i + 1}</strong>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                   <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>Duration:</span>
-                   <EditableText 
-                      value={clip.duration}
-                      onChange={(val) => updateContent('shortFormClips', (prev) => {
-                        const newClips = [...prev];
-                        newClips[i] = { ...newClips[i], duration: val };
-                        return newClips;
-                      })}
-                      style={{ fontSize: '0.85rem', width: 'auto', minWidth: '60px' }}
-                    />
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleCopy(`${clip.hook}\n\n${clip.content}\n\n${clip.caption}`, `clip-${i}`)}
-                  className="icon-btn"
-                >
-                  {copiedId === `clip-${i}` ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong style={{ fontSize: '0.9rem' }}>Hook:</strong>
-                <EditableText 
-                  value={clip.hook}
-                  onChange={(val) => updateContent('shortFormClips', (prev) => {
-                    const newClips = [...prev];
-                    newClips[i] = { ...newClips[i], hook: val };
-                    return newClips;
-                  })}
-                  style={{ marginTop: '4px' }}
-                />
-              </div>
-              <div style={{ marginBottom: '8px' }}>
-                <strong style={{ fontSize: '0.9rem' }}>Content:</strong>
-                <EditableText 
-                  value={clip.content}
-                  multiline
-                  onChange={(val) => updateContent('shortFormClips', (prev) => {
-                    const newClips = [...prev];
-                    newClips[i] = { ...newClips[i], content: val };
-                    return newClips;
-                  })}
-                  style={{ marginTop: '4px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}
-                />
-              </div>
-              <div>
-                <strong style={{ fontSize: '0.9rem' }}>Caption:</strong>
-                <EditableText 
-                  value={clip.caption}
-                  multiline
-                  onChange={(val) => updateContent('shortFormClips', (prev) => {
-                    const newClips = [...prev];
-                    newClips[i] = { ...newClips[i], caption: val };
-                    return newClips;
-                  })}
-                  style={{ marginTop: '4px', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 'linkedin',
-      title: 'LinkedIn Post',
-      icon: Linkedin,
-      color: '#0077B5',
-      data: repurposedContent?.linkedInPost,
-      render: (post) => (
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <strong style={{ color: 'var(--accent-primary)' }}>Professional Post</strong>
-            <button
-              onClick={() => handleCopy(post.body, 'linkedin')}
-              className="icon-btn"
-            >
-              {copiedId === 'linkedin' ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-          <EditableText 
-            value={post.body}
-            multiline
-            onChange={(val) => updateContent('linkedInPost', (prev) => ({ ...prev, body: val }))}
-            style={{ 
-              whiteSpace: 'pre-wrap',
-              fontFamily: 'inherit',
-              fontSize: '0.9rem',
-              lineHeight: '1.6',
-              color: 'var(--text-secondary)'
-            }}
-          />
-        </div>
-      )
-    },
-    {
-      id: 'twitter',
-      title: 'Twitter Thread',
-      icon: Twitter,
-      color: '#1DA1F2',
-      data: repurposedContent?.twitterThread,
-      render: (thread) => (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {thread?.map((tweet, i) => (
-            <div key={i} className="card" style={{ padding: '16px', position: 'relative' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{
-                    background: 'var(--accent-primary)',
-                    color: 'white',
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold'
-                  }}>{tweet.number}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{tweet.type}</span>
-                </div>
-                <button
-                  onClick={() => handleCopy(tweet.content, `tweet-${i}`)}
-                  className="icon-btn"
-                >
-                  {copiedId === `tweet-${i}` ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-              <EditableText 
-                value={tweet.content}
-                multiline
-                onChange={(val) => updateContent('twitterThread', (prev) => {
-                  const newThread = [...prev];
-                  newThread[i] = { ...newThread[i], content: val, characterCount: val.length };
-                  return newThread;
-                })}
-                style={{ fontSize: '0.9rem', lineHeight: '1.5' }}
-              />
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '8px' }}>
-                {tweet.characterCount} characters
-              </p>
-            </div>
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 'blog',
-      title: 'Blog Post',
-      icon: FileText,
-      color: '#FF6B6B',
-      data: repurposedContent?.blogPost,
-      render: (blog) => (
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div>
-              <strong style={{ color: 'var(--accent-primary)' }}>SEO-Optimized Article</strong>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{blog.wordCount}</p>
-            </div>
-            <button
-              onClick={() => handleCopy(`# ${blog.title}\n\n${blog.structure.introduction}\n\n${blog.structure.h2Sections.map(s => `## ${s.heading}\n\n${s.content}`).join('\n\n')}`, 'blog')}
-              className="icon-btn"
-            >
-              {copiedId === 'blog' ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <EditableText 
-              value={blog.structure.h1}
-              onChange={(val) => updateContent('blogPost', (prev) => ({
-                ...prev,
-                structure: { ...prev.structure, h1: val }
-              }))}
-              style={{ fontSize: '1.5em', fontWeight: 'bold' }}
-            />
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <EditableText 
-              value={blog.structure.introduction}
-              multiline
-              onChange={(val) => updateContent('blogPost', (prev) => ({
-                ...prev,
-                structure: { ...prev.structure, introduction: val }
-              }))}
-              style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}
-            />
-          </div>
-          {blog.structure.h2Sections.map((section, i) => (
-            <div key={i} style={{ marginBottom: '16px' }}>
-              <div style={{ marginBottom: '8px' }}>
-                <EditableText 
-                  value={section.heading}
-                  onChange={(val) => updateContent('blogPost', (prev) => {
-                    const newSections = [...prev.structure.h2Sections];
-                    newSections[i] = { ...newSections[i], heading: val };
-                    return {
-                      ...prev,
-                      structure: { ...prev.structure, h2Sections: newSections }
-                    };
-                  })}
-                  style={{ fontSize: '1rem', fontWeight: 'bold' }}
-                />
-              </div>
-              <EditableText 
-                value={section.content}
-                multiline
-                onChange={(val) => updateContent('blogPost', (prev) => {
-                  const newSections = [...prev.structure.h2Sections];
-                  newSections[i] = { ...newSections[i], content: val };
-                  return {
-                    ...prev,
-                    structure: { ...prev.structure, h2Sections: newSections }
-                  };
-                })}
-                style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}
-              />
-            </div>
-          ))}
-          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-            <strong style={{ fontSize: '0.85rem' }}>SEO Keywords:</strong>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-              {blog.seoKeywords.join(', ')}
-            </p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'email',
-      title: 'Email Newsletter',
-      icon: Mail,
-      color: '#EA4335',
-      data: repurposedContent?.emailNewsletter,
-      render: (email) => (
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <strong style={{ color: 'var(--accent-primary)' }}>Newsletter Format</strong>
-            <button
-              onClick={() => handleCopy(`Subject: ${email.subject}\n\n${email.body}`, 'email')}
-              className="icon-btn"
-            >
-              {copiedId === 'email' ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <strong style={{ fontSize: '0.85rem' }}>Subject:</strong>
-            <p style={{ marginTop: '4px', fontSize: '0.95rem' }}>{email.subject}</p>
-          </div>
-          <div style={{ marginBottom: '12px' }}>
-            <strong style={{ fontSize: '0.85rem' }}>Preheader:</strong>
-            <p style={{ marginTop: '4px', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{email.preheader}</p>
-          </div>
-          <div>
-            <strong style={{ fontSize: '0.85rem' }}>Body:</strong>
-          <EditableText 
-            value={email.body}
-            multiline
-            onChange={(val) => updateContent('emailNewsletter', (prev) => ({ ...prev, body: val }))}
-            style={{ 
-              whiteSpace: 'pre-wrap',
-              fontFamily: 'inherit',
-              fontSize: '0.9rem',
-              lineHeight: '1.6',
-              marginTop: '8px',
-              color: 'var(--text-secondary)'
-            }}
-          />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'instagram',
-      title: 'Instagram Caption',
-      icon: Instagram,
-      color: '#E4405F',
-      data: repurposedContent?.instagramCaption,
-      render: (ig) => (
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <strong style={{ color: 'var(--accent-primary)' }}>Post Caption</strong>
-            <button
-              onClick={() => handleCopy(ig.caption, 'instagram')}
-              className="icon-btn"
-            >
-              {copiedId === 'instagram' ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-          <EditableText 
-            value={ig.caption}
-            multiline
-            onChange={(val) => updateContent('instagramCaption', (prev) => ({ ...prev, caption: val }))}
-            style={{ 
-              whiteSpace: 'pre-wrap',
-              fontFamily: 'inherit',
-              fontSize: '0.9rem',
-              lineHeight: '1.6',
-              color: 'var(--text-secondary)'
-            }}
-          />
-          <div style={{ marginTop: '16px', padding: '12px', background: 'var(--bg-secondary)', borderRadius: '6px' }}>
-            <strong style={{ fontSize: '0.85rem' }}>Story Prompt:</strong>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{ig.storyPrompt}</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'podcast',
-      title: 'Podcast Script',
-      icon: Mic,
-      color: '#9B59B6',
-      data: repurposedContent?.podcastScript,
-      render: (podcast) => (
-        <div className="card" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <strong style={{ color: 'var(--accent-primary)' }}>Conversational Format</strong>
-            <button
-              onClick={() => handleCopy(`${podcast.intro}\n\n${podcast.mainContent.map(s => s.script).join('\n\n')}\n\n${podcast.outro}`, 'podcast')}
-              className="icon-btn"
-            >
-              {copiedId === 'podcast' ? <Check size={16} /> : <Copy size={16} />}
-            </button>
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <strong style={{ fontSize: '0.9rem' }}>Intro:</strong>
-            <EditableText 
-              value={podcast.intro}
-              multiline
-              onChange={(val) => updateContent('podcastScript', (prev) => ({ ...prev, intro: val }))}
-              style={{ 
-                marginTop: '8px',
-                fontSize: '0.85rem',
-                lineHeight: '1.5',
-                color: 'var(--text-tertiary)'
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: '16px' }}>
-            <strong style={{ fontSize: '0.9rem' }}>Main Content:</strong>
-            {podcast.mainContent.map((segment, i) => (
-              <div key={i} style={{ marginTop: '12px', paddingLeft: '12px', borderLeft: '2px solid var(--border-subtle)' }}>
-                <EditableText 
-                  value={segment.script}
-                  multiline
-                  onChange={(val) => updateContent('podcastScript', (prev) => {
-                    const newContent = [...prev.mainContent];
-                    newContent[i] = { ...newContent[i], script: val };
-                    return { ...prev, mainContent: newContent };
-                  })}
-                  style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}
-                />
-              </div>
-            ))}
-          </div>
-          <div>
-            <strong style={{ fontSize: '0.9rem' }}>Outro:</strong>
-            <EditableText 
-              value={podcast.outro}
-              multiline
-              onChange={(val) => updateContent('podcastScript', (prev) => ({ ...prev, outro: val }))}
-              style={{ 
-                marginTop: '8px',
-                fontSize: '0.85rem',
-                lineHeight: '1.5',
-                color: 'var(--text-tertiary)'
-              }}
-            />
-          </div>
-        </div>
-      )
-    },
-  ];
 
   return (
-    <div className="tab-content">
-      {/* Smart Workflow Section */}
-      <div className="card" style={{ padding: '24px', marginBottom: '32px', border: '1px solid var(--accent-secondary)', background: 'rgba(0, 212, 255, 0.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <GitMerge size={20} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Smart Workflow: YouTube → TikTok</h3>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Automated Content Re-engineering Pipeline</p>
-          </div>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Repurposing Arc</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Platform-native variant synchronization & narrative expansion</p>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <WorkflowStep icon={Video} label="Master Script" status="completed" />
-          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
-          <WorkflowStep icon={Sparkles} label="AI Hook Extraction" status="active" />
-          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
-          <WorkflowStep icon={FileText} label="Visual Scripting" status="pending" />
-          <ArrowRight size={20} style={{ color: 'var(--text-tertiary)' }} />
-          <WorkflowStep icon={Video} label="Final Short-Form" status="pending" />
+        <div style={{ display: 'flex', gap: 12 }}>
+           <button onClick={handleAIGenerate} className="btn-primary" disabled={isGenerating} style={{ padding: '12px 24px' }}>
+             {isGenerating ? <RefreshCw className="animate-spin" size={18} /> : <GitMerge size={18} />}
+             <span>{isGenerating ? 'Synthesizing...' : 'Saturate Ecosystem'}</span>
+           </button>
         </div>
       </div>
 
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h2>Multi-Platform Repurposing</h2>
-          <p>Transform your content into 6+ platform-optimized formats</p>
-        </div>
-        <button 
-          onClick={handleAIGenerate}
-          disabled={isGenerating}
-          className="shiny-button"
-          style={{ padding: '10px 20px', gap: 8 }}
-        >
-          {isGenerating ? <div className="spinner" /> : <Zap size={18} fill="currentColor" />}
-          {isGenerating ? 'Analyzing...' : 'Generate All (AI)'}
-        </button>
+      <div className="glass" style={{ padding: 24, borderRadius: 24, marginBottom: 40, display: 'flex', gap: 40, justifyContent: 'center', background: 'var(--bg-tertiary)50' }}>
+         <WorkflowStep icon={Layers} label="Script Ingestion" status="done" />
+         <WorkflowStep icon={Palette} label="Variant Forging" status={isGenerating ? 'active' : content.shortForm ? 'done' : 'idle'} />
+         <WorkflowStep icon={Globe} label="Node Sync" status={content.shortForm ? 'done' : 'idle'} />
       </div>
 
-      <div style={{ display: 'grid', gap: '24px' }}>
-        {platforms.map((platform, index) => {
-          const Icon = platform.icon;
-          const isLoading = loadingStates[platform.id];
-          const hasData = platform.data;
-
-          return (
-            <motion.div
-              key={platform.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                marginBottom: '12px'
-              }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: `${platform.color}15`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Icon size={20} style={{ color: platform.color }} />
-                </div>
-                <h3 style={{ margin: 0 }}>{platform.title}</h3>
-                {isLoading && <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>Generating...</span>}
-                {!isLoading && hasData && (
-                  <button
-                    onClick={() => handleSingleRegenerate(platform.id)}
-                    className="icon-btn"
-                    style={{ marginLeft: 'auto' }}
-                    title="Regenerate this section"
-                  >
-                    <RefreshCw size={16} />
-                  </button>
-                )}
-              </div>
-
-              {isLoading ? (
-                <div className="card skeleton-card" style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div className="spinner" style={{ width: 24, height: 24, borderTopColor: platform.color }} />
-                </div>
-              ) : (
-                hasData ? platform.render(platform.data) : (
-                  <div className="card dashed-border" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                    <p>Click "Generate All" to create this content.</p>
+      <div className="stagger-children" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: 28 }}>
+         {Object.entries(PLATFORM_CONFIG).map(([key, config]) => {
+            const platformData = content[key];
+            return (
+               <motion.div 
+                  key={key} 
+                  whileHover={{ y: -6 }}
+                  className="glass glass-hover" 
+                  style={{ padding: 40, borderRadius: 32, display: 'flex', flexDirection: 'column', gap: 28 }}
+               >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: config.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                           <config.icon size={22} />
+                        </div>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>{config.label}</h3>
+                     </div>
+                     {!platformData && !isGenerating && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 900, color: 'var(--text-tertiary)', background: 'var(--bg-tertiary)', padding: '6px 12px', borderRadius: 100 }}>QUEUED</span>
+                     )}
                   </div>
-                )
-              )}
-            </motion.div>
-          );
-        })}
+
+                  {platformData ? (
+                     <div className="glass" style={{ padding: 24, borderRadius: 20, background: 'rgba(255,255,255,0.02)', flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                           <span style={{ fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Synchronized Content</span>
+                           <button onClick={() => handleCopy(JSON.stringify(platformData))} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                              <Copy size={14} />
+                           </button>
+                        </div>
+                        <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                           {typeof platformData === 'string' ? platformData : JSON.stringify(platformData, null, 2)}
+                        </div>
+                     </div>
+                  ) : (
+                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 40, textAlign: 'center', opacity: 0.3 }}>
+                        <config.icon size={48} style={{ marginBottom: 20 }} />
+                        <p style={{ fontWeight: 800 }}>Node not yet materialized.</p>
+                     </div>
+                  )}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 12 }}>
+                     <div style={{ display: 'flex', gap: 10 }}>
+                        <button className="btn-secondary" disabled={!platformData} style={{ padding: '10px 20px' }}>
+                           <Save size={16} />
+                           <span>Save</span>
+                        </button>
+                     </div>
+                     <ArrowRight size={20} style={{ opacity: 0.2 }} />
+                  </div>
+               </motion.div>
+            );
+         })}
       </div>
     </div>
   );

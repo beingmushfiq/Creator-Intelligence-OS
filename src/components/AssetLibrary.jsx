@@ -3,240 +3,207 @@ import {
   Image as ImageIcon, Music, Trash2, Filter, Loader2, ExternalLink, 
   Calendar, Copy, Download, Play, Pause, Search, Folders,
   Layers, HardDrive, Smartphone, Monitor, ChevronRight, Info,
-  Sparkles, FileText, Activity, RefreshCcw
+  RefreshCw, Zap, MoreHorizontal, Grid, List as ListIcon,
+  X, Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { dbService } from '../services/dbService';
+import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { dbService } from '../services/dbService.js';
 
 export default function AssetLibrary() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); 
-  const [previewUrl, setPreviewUrl] = useState(null);
-
-  useEffect(() => {
-    if (user) loadAssets();
-  }, [user]);
+  const [filter, setFilter] = useState('all');
+  const [viewMode, setViewMode] = useState('grid');
 
   const loadAssets = async () => {
+    if (!user) return;
+    setLoading(true);
     try {
-      setLoading(true);
       const data = await dbService.getAssets(user.id);
-      setAssets(data || []);
+      setAssets(data);
     } catch (err) {
-      console.error('Asset load failed:', err);
+      addToast('error', 'Vault failed to synchronize.');
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => { loadAssets(); }, [user]);
+
   const handleDelete = async (id) => {
+    if (!confirm('Permanent deletion of this asset?')) return;
     try {
       await dbService.deleteAsset(id);
       setAssets(prev => prev.filter(a => a.id !== id));
-      addToast('success', 'Asset decommissioned.');
+      addToast('success', 'Asset removed from vault.');
     } catch (err) {
-      addToast('error', 'Decommission failed.');
+      addToast('error', 'Deletion failed.');
     }
   };
 
-  const filtered = filter === 'all' ? assets : assets.filter(a => a.type === filter);
+  const filteredAssets = assets.filter(a => {
+    if (filter === 'all') return true;
+    return a.type === filter;
+  });
 
   const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return new Date(dateStr).toLocaleDateString(undefined, { 
+       month: 'short', day: 'numeric', year: 'numeric' 
+    }).toUpperCase();
   };
 
-  if (!user) {
-    return (
-      <div className="tab-content center-content">
-        <div style={{ textAlign: 'center' }}>
-          <HardDrive size={48} className="opacity-20" style={{ marginBottom: 20 }} />
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Vault Authorization Required</h3>
-          <p style={{ color: 'var(--text-tertiary)' }}>Sign in to access your secure creative asset library.</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return (
+     <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+        <RefreshCw size={48} className="animate-spin" color="var(--accent-primary)" />
+     </div>
+  );
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">The Creative Vault</h2>
-          <p className="tab-subtitle">{assets.length} high-fidelity assets synchronized across your workspace</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Visual Vault</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Centralized high-fidelity asset synchronization & archival</p>
         </div>
-
+        
         <div style={{ display: 'flex', gap: 12 }}>
-          <div className="view-switcher" style={{ background: 'var(--bg-tertiary)', padding: 4, borderRadius: 12, border: '1px solid var(--border-subtle)', display: 'flex' }}>
-             {[
-               { key: 'all', label: 'All', Icon: Folders },
-               { key: 'image', label: 'Images', Icon: ImageIcon },
-               { key: 'audio', label: 'Audio', Icon: Music },
-             ].map(f => (
-                <button 
-                  key={f.key}
-                  onClick={() => setFilter(f.key)}
-                  style={{ 
-                    fontSize: '0.7rem', fontWeight: 800, padding: '8px 16px', borderRadius: 8, border: 'none',
-                    background: filter === f.key ? 'var(--bg-secondary)' : 'transparent',
-                    color: filter === f.key ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                    cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em',
-                    display: 'flex', alignItems: 'center', gap: 6
-                  }}
-                >
-                  <f.Icon size={14} />
-                  <span>{f.label}</span>
-                </button>
-             ))}
-          </div>
-          <button onClick={loadAssets} className="btn-secondary" style={{ padding: '8px 16px' }}><RefreshCcw size={18} className={loading ? 'spin' : ''} /></button>
+           <div className="glass" style={{ display: 'flex', padding: 4, borderRadius: 12 }}>
+              <button 
+                onClick={() => setViewMode('grid')}
+                className={viewMode === 'grid' ? 'btn-secondary' : 'glass-hover'}
+                style={{ padding: 8, borderRadius: 8, border: 'none', background: viewMode === 'grid' ? 'var(--bg-tertiary)' : 'transparent', color: viewMode === 'grid' ? 'var(--accent-primary)' : 'var(--text-tertiary)' }}
+              >
+                <Grid size={18} />
+              </button>
+              <button 
+                onClick={() => setViewMode('list')}
+                className={viewMode === 'list' ? 'btn-secondary' : 'glass-hover'}
+                style={{ padding: 8, borderRadius: 8, border: 'none', background: viewMode === 'list' ? 'var(--bg-tertiary)' : 'transparent', color: viewMode === 'list' ? 'var(--accent-primary)' : 'var(--text-tertiary)' }}
+              >
+                <ListIcon size={18} />
+              </button>
+           </div>
+           <button onClick={loadAssets} className="btn-secondary" style={{ padding: '12px' }}>
+              <RefreshCw size={18} />
+           </button>
         </div>
       </div>
 
-      {loading ? (
-        <div className="center-content" style={{ minHeight: '400px' }}>
-          <Loader2 size={48} className="spin opacity-20" color="var(--accent-primary)" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="center-content" style={{ minHeight: '400px' }}>
-          <div style={{ textAlign: 'center' }}>
-            <ImageIcon size={48} className="opacity-10" style={{ marginBottom: 20 }} />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-tertiary)' }}>Vault is Empty</h3>
-            <p style={{ color: 'var(--text-tertiary)' }}>Generate visuals or audio to populate your library.</p>
-          </div>
-        </div>
-      ) : (
-        <motion.div 
-           layout
-           className="stagger-children" 
-           style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}
-        >
-          <AnimatePresence>
-            {filtered.map(asset => (
-              <motion.div
-                key={asset.id}
-                layout
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="card"
-                style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}
-              >
-                {/* Visual Preview */}
-                <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden', background: 'var(--bg-tertiary)' }}>
-                  {asset.type === 'image' ? (
-                    <motion.div 
-                      whileHover={{ scale: 1.05 }}
-                      style={{ 
-                        width: '100%', height: '100%', backgroundImage: `url(${asset.url})`, 
-                        backgroundSize: 'cover', backgroundPosition: 'center', cursor: 'zoom-in'
-                      }}
-                      onClick={() => setPreviewUrl(asset.url)}
-                    >
-                       <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.3)', opacity: 0, transition: 'opacity 0.3s' }} className="hover-show">
-                          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#fff' }}>
-                             <ExternalLink size={24} />
-                          </div>
-                       </div>
-                    </motion.div>
-                  ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-                       <Music size={40} color="var(--accent-primary)" style={{ filter: 'drop-shadow(0 0 10px var(--accent-primary)40)' }} />
-                       <div style={{ display: 'flex', gap: 4, height: 20, alignItems: 'flex-end' }}>
-                          {[...Array(8)].map((_, i) => (
-                             <motion.div 
-                               key={i} 
-                               animate={{ height: [`40%`, `${Math.random() * 60 + 40}%`, `40%`] }}
-                               transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                               style={{ width: 4, background: 'var(--accent-primary)', borderRadius: 2 }} 
-                             />
-                          ))}
-                       </div>
-                    </div>
-                  )}
-                  <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                     <div className={`badge badge-${asset.type === 'image' ? 'primary' : 'purple'}`} style={{ fontSize: '0.65rem', fontWeight: 900 }}>
-                        {asset.type.toUpperCase()}
-                     </div>
-                  </div>
-                </div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 32, overflowX: 'auto', paddingBottom: 8, scrollbarWidth: 'none' }}>
+         <FilterPill label="All Assets" active={filter === 'all'} onClick={() => setFilter('all')} icon={Folders} />
+         <FilterPill label="Images" active={filter === 'image'} onClick={() => setFilter('image')} icon={ImageIcon} />
+         <FilterPill label="Audio" active={filter === 'audio'} onClick={() => setFilter('audio')} icon={Music} />
+      </div>
 
-                {/* Content Details */}
-                <div style={{ padding: 20 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                     <span style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-                        Added {formatDate(asset.created_at)}
-                     </span>
-                  </div>
-
-                  {asset.prompt && (
-                    <p style={{ 
-                      fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.5, height: 36, 
-                      overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      marginBottom: 20, fontStyle: 'italic'
-                    }}>
-                      "{asset.prompt}"
-                    </p>
-                  )}
-
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <a 
-                      href={asset.url}
-                      download={`asset-${asset.id}`}
-                      className="shiny-button"
-                      style={{ flex: 1, padding: '8px', fontSize: '0.75rem', gap: 6 }}
-                    >
-                      <Download size={14} /> <span>Fetch</span>
-                    </a>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(asset.prompt);
-                        addToast('success', 'Prompt synchronized.');
-                      }}
-                      className="btn-secondary"
-                      style={{ padding: '8px' }}
-                    >
-                      <Copy size={16} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(asset.id)}
-                      className="btn-secondary"
-                      style={{ padding: '8px', color: 'var(--accent-danger)', borderColor: 'var(--accent-danger)20', background: 'var(--accent-danger)05' }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
-      )}
-
-      {/* High-Fidelity Preview Modal */}
-      <AnimatePresence>
-        {previewUrl && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setPreviewUrl(null)}
-            style={{
-              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 10000,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out', padding: 40,
-              backdropFilter: 'blur(20px)'
-            }}
+      <AnimatePresence mode="wait">
+        {filteredAssets.length === 0 ? (
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="center-content" style={{ minHeight: '40vh' }}>
+             <div className="glass" style={{ padding: 48, borderRadius: 32, textAlign: 'center' }}>
+                <HardDrive size={48} style={{ opacity: 0.1, margin: '0 auto 24px' }} />
+                <p style={{ color: 'var(--text-tertiary)', fontWeight: 800 }}>No synchronized assets in this sector.</p>
+             </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+             key={viewMode}
+             initial={{ opacity: 0, y: 10 }}
+             animate={{ opacity: 1, y: 0 }}
+             style={{ 
+               display: viewMode === 'grid' ? 'grid' : 'flex',
+               flexDirection: 'column',
+               gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+               gap: 24
+             }}
           >
-            <motion.img
-              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
-              src={previewUrl}
-              style={{ maxWidth: '90%', maxHeight: '90%', borderRadius: 24, boxShadow: '0 40px 100px rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)' }}
-            />
+            {filteredAssets.map(asset => (
+              <AssetCard 
+                 key={asset.id} 
+                 asset={asset} 
+                 viewMode={viewMode} 
+                 onDelete={() => handleDelete(asset.id)} 
+                 formatDate={formatDate}
+              />
+            ))}
           </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
+}
+
+function FilterPill({ label, active, onClick, icon: Icon }) {
+   return (
+      <button 
+         onClick={onClick}
+         className={`glass glass-hover ${active ? 'glass-strong' : ''}`}
+         style={{ 
+            padding: '10px 20px', borderRadius: 100, border: active ? '1px solid var(--accent-primary)' : '1px solid var(--border-subtle)',
+            display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', cursor: 'pointer',
+            color: active ? 'var(--accent-primary)' : 'var(--text-secondary)',
+            fontWeight: 800, fontSize: '0.85rem'
+         }}
+      >
+         <Icon size={16} />
+         <span>{label}</span>
+      </button>
+   );
+}
+
+function AssetCard({ asset, viewMode, onDelete, formatDate }) {
+   const isImage = asset.type === 'image';
+   
+   if (viewMode === 'list') {
+      return (
+         <div className="glass glass-hover" style={{ padding: '16px 24px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 20 }}>
+            <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--bg-tertiary)', overflow: 'hidden', flexShrink: 0 }}>
+               {isImage ? <img src={asset.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Music size={20} style={{ margin: 12, color: 'var(--accent-secondary)' }} />}
+            </div>
+            <div style={{ flex: 1 }}>
+               <h4 style={{ fontSize: '0.95rem', fontWeight: 800, margin: 0 }}>{asset.name || 'Unnamed Asset'}</h4>
+               <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 900 }}>{formatDate(asset.created_at)}</span>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+               <a href={asset.url} target="_blank" rel="noreferrer" className="btn-secondary" style={{ padding: 8 }}><ExternalLink size={16} /></a>
+               <button onClick={onDelete} className="btn-secondary" style={{ padding: 8, color: 'var(--accent-danger)' }}><Trash2 size={16} /></button>
+            </div>
+         </div>
+      );
+   }
+
+   return (
+      <motion.div 
+         whileHover={{ y: -8 }}
+         className="glass glass-hover"
+         style={{ borderRadius: 24, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+      >
+         <div style={{ width: '100%', aspectRatio: '1/1', background: 'var(--bg-tertiary)', position: 'relative', overflow: 'hidden' }}>
+            {isImage ? (
+               <img src={asset.url} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-secondary)' }}>
+                  <Music size={48} />
+               </div>
+            )}
+            <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
+               <button onClick={onDelete} className="glass" style={{ padding: 8, borderRadius: 10, border: 'none', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer' }}>
+                  <Trash2 size={14} />
+               </button>
+            </div>
+         </div>
+         <div style={{ padding: 20 }}>
+            <h4 style={{ fontSize: '1rem', fontWeight: 900, marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{asset.name || 'Unnamed Asset'}</h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 900 }}>{formatDate(asset.created_at)}</span>
+               <a href={asset.url} target="_blank" rel="noreferrer" className="glass glass-hover" style={{ padding: '4px 12px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 900, color: 'var(--accent-primary)', textDecoration: 'none' }}>
+                  VIEW <ExternalLink size={10} style={{ marginLeft: 4 }} />
+               </a>
+            </div>
+         </div>
+      </motion.div>
+   );
 }

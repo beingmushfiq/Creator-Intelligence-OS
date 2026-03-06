@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, MessageSquare, Loader2 } from 'lucide-react';
+import { X, Send, MessageSquare, Loader2, RefreshCw, Send as SendIcon, Share2 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext';
 import { useAuth } from '../context/AuthContext';
 import { dbService } from '../services/dbService';
@@ -11,7 +11,6 @@ export default function CommentsSidebar({ isOpen, onClose, contextId = 'general'
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Load real comments from DB
   useEffect(() => {
     if (isOpen && user) {
       const teamId = activeWorkspace !== 'personal' ? activeWorkspace : null;
@@ -29,32 +28,15 @@ export default function CommentsSidebar({ isOpen, onClose, contextId = 'general'
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newComment.trim() || !user) return;
-
     setLoading(true);
     try {
       const teamId = activeWorkspace !== 'personal' ? activeWorkspace : null;
       const comment = await dbService.addComment(user.id, contextId, newComment, teamId);
-      
-      // Manually add the user name for immediate display
-      const displayComment = {
-        ...comment,
-        user: { name: user.email.split('@')[0] }
-      };
-
-      setComments(prev => ({
-        ...prev,
-        [contextId]: [displayComment, ...(prev[contextId] || [])]
-      }));
-      
-      // Activity Log
+      const displayComment = { ...comment, user: { name: user.email.split('@')[0] } };
+      setComments(prev => ({ ...prev, [contextId]: [displayComment, ...(prev[contextId] || [])] }));
       dbService.logActivity(user.id, 'comment', `Commented on ${contextId}: "${newComment.substring(0, 30)}..."`, teamId);
-      
       setNewComment('');
-    } catch (err) {
-      console.error('Failed to add comment:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   return (
@@ -66,110 +48,100 @@ export default function CommentsSidebar({ isOpen, onClose, contextId = 'general'
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 90 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100 }}
           />
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="comments-sidebar"
+            className="glass"
             style={{
               position: 'fixed',
               top: 0, bottom: 0, right: 0,
-              width: 350,
-              background: 'var(--bg-secondary)',
-              borderLeft: '1px solid var(--border-medium)',
-              zIndex: 100,
+              width: 400,
+              background: 'rgba(15, 15, 20, 0.98)',
+              borderLeft: '1px solid var(--accent-primary)20',
+              zIndex: 1200,
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '-4px 0 20px rgba(0,0,0,0.3)'
+              boxShadow: 'var(--shadow-glow)'
             }}
           >
-            <div style={{ 
-              padding: 16, 
-              borderBottom: '1px solid var(--border-subtle)', 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              background: 'var(--bg-primary)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <MessageSquare size={18} />
-                <h3 style={{ margin: 0, fontSize: '1rem' }}>Team Chat</h3>
+            {/* Header */}
+            <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div className="glow-border" style={{ width: 36, height: 36, borderRadius: 10, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                   <MessageSquare size={18} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900 }}>Ecosystem Chat</h3>
               </div>
-              <button onClick={onClose} className="icon-btn"><X size={18} /></button>
+              <button onClick={onClose} className="btn-ghost" style={{ padding: 8, borderRadius: '50%' }}><X size={20} /></button>
             </div>
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Chat Feed */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }} className="custom-scrollbar">
               {contextComments.length === 0 ? (
-                <div style={{ textAlign: 'center', color: 'var(--text-tertiary)', marginTop: 40 }}>
-                  <p>No comments yet.</p>
-                  <p style={{ fontSize: '0.8rem' }}>Start the conversation!</p>
+                <div style={{ textAlign: 'center', marginTop: 60, opacity: 0.3 }}>
+                  <Share2 size={40} style={{ marginBottom: 16 }} />
+                  <p style={{ fontWeight: 800 }}>Neural Feed Silent</p>
+                  <p style={{ fontSize: '0.8rem' }}>Establish interaction protocols below.</p>
                 </div>
               ) : (
                 contextComments.map(comment => (
-                  <div key={comment.id} style={{ display: 'flex', gap: 10 }}>
-                    <div style={{ 
-                      width: 32, height: 32, 
-                      borderRadius: '50%', 
-                      background: 'var(--accent-primary)', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: '#fff', fontSize: '0.8rem', fontWeight: 600,
-                      flexShrink: 0
-                    }}>
-                      {comment.user?.name?.[0] || comment.email?.[0] || '?'}
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={comment.id} style={{ display: 'flex', gap: 12 }}>
+                    <div className="glow-border" style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.8rem', fontWeight: 950, flexShrink: 0 }}>
+                      {comment.user?.name?.[0]?.toUpperCase() || '?'}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                        <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>
-                          {comment.user?.name || comment.email?.split('@')[0] || 'Unknown'}
-                        </span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                          {new Date(comment.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontWeight: 850, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{comment.user?.name || 'Operative'}</span>
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>{new Date(comment.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
-                      <div style={{ fontSize: '0.9rem', marginTop: 2, color: 'var(--text-secondary)' }}>
+                      <div className="glass" style={{ padding: '12px 16px', borderRadius: '0 16px 16px 16px', fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                         {comment.text}
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 ))
               )}
             </div>
 
-            <div style={{ padding: 16, borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-primary)' }}>
+            {/* Input Area */}
+            <div style={{ padding: 32, borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)30' }}>
               <form onSubmit={handleSubmit} style={{ position: 'relative' }}>
                 <input
                   type="text"
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Type a message..."
+                  placeholder="Sync directive..."
                   style={{
                     width: '100%',
-                    padding: '10px 40px 10px 12px',
-                    borderRadius: 20,
-                    border: '1px solid var(--border-medium)',
-                    background: 'var(--bg-tertiary)',
-                    color: 'var(--text-primary)'
+                    padding: '16px 56px 16px 20px',
+                    borderRadius: 16,
+                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-tertiary)50',
+                    color: 'var(--text-primary)',
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    outline: 'none'
                   }}
                 />
                 <button 
                   type="submit" 
-                  className="btn-primary" 
                   disabled={!newComment.trim() || loading}
+                  className="btn-primary"
                   style={{ 
-                    padding: '8px 12px',
                     position: 'absolute',
-                    right: 8,
-                    top: '50%',
+                    right: 8, top: '50%',
                     transform: 'translateY(-50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    width: 40, height: 40,
+                    borderRadius: 12,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 0
                   }}
                 >
-                  <Send size={16} />
+                  {loading ? <RefreshCw className="animate-spin" size={16} /> : <SendIcon size={16} />}
                 </button>
               </form>
             </div>

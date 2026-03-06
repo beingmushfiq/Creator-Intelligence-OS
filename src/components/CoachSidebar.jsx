@@ -3,284 +3,100 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Brain, X, Sparkles, AlertCircle, ChevronDown,
   Zap, RefreshCw, Target, ShieldCheck, Microscope,
-  Activity, Cpu
+  Activity, Cpu, HeartPulse, Compass, ChevronRight
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
 import './CoachSidebar.css';
 
 export default function CoachSidebar({ isOpen, onClose }) {
-  const { coachFeedback, analyzeCoachFeedback, loading } = useCreator();
-
-  const scoreTheme = useMemo(() => {
-    if (!coachFeedback) return { color: '#7c5cfc', glow: 'rgba(124,92,252,0.4)' };
-    if (coachFeedback.coachScore >= 80) return { color: '#22c55e', glow: 'rgba(34,197,94,0.4)' };
-    if (coachFeedback.coachScore >= 50) return { color: '#7c5cfc', glow: 'rgba(124,92,252,0.4)' };
-    return { color: '#ef4444', glow: 'rgba(239,68,68,0.4)' };
-  }, [coachFeedback]);
+  const { data, loading } = useCreator();
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Cinematic backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            style={{
-              position: 'fixed', inset: 0,
-              background: 'rgba(4,4,12,0.75)',
-              backdropFilter: 'blur(16px)',
-              zIndex: 90,
-            }}
+            className="sidebar-overlay visible"
+            style={{ zIndex: 1100 }}
           />
-
-          {/* Panel */}
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 200 }}
-            className="cs-panel"
+            transition={{ type: 'spring', damping: 30, stiffness: 250 }}
+            className="glass"
+            style={{
+              position: 'fixed',
+              top: 0, bottom: 0, right: 0,
+              width: 420,
+              borderLeft: '1px solid var(--accent-primary)30',
+              zIndex: 1200,
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: 'var(--shadow-glow)',
+              background: 'rgba(10, 10, 15, 0.95)',
+              backdropFilter: 'blur(20px)'
+            }}
           >
-            {/* Neural grid bg */}
-            <div className="cs-bg-grid" />
-            {/* Ambient glow corner */}
-            <div className="cs-bg-glow" />
-
-            {/* ── Header ── */}
-            <div className="cs-header">
-              <div className="cs-header-left">
-                <div className="cs-header-icon">
-                  <Brain size={20} />
-                </div>
-                <div>
-                  <div className="cs-header-overline">AI Coach</div>
-                  <h3 className="cs-header-title">Neural Audit</h3>
-                </div>
-              </div>
-
-              <div className="cs-header-right">
-                <div className="cs-sync-badge">
-                  <motion.span
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ duration: 1.8, repeat: Infinity }}
-                    className="cs-sync-dot"
-                  />
-                  Sync Level 4
-                </div>
-                <button className="cs-close-btn" onClick={onClose}>
-                  <X size={18} />
-                </button>
-              </div>
+            {/* Header */}
+            <div style={{ padding: '32px 40px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Brain size={22} />
+                  </div>
+                  <div>
+                     <h3 style={{ fontSize: '1.2rem', fontWeight: 900, margin: 0 }}>Intelligence Audit</h3>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-success)' }} />
+                        <span style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-success)', textTransform: 'uppercase' }}>Live Diagnostic</span>
+                     </div>
+                  </div>
+               </div>
+               <button onClick={onClose} className="btn-ghost" style={{ padding: 10, borderRadius: '50%' }}><X size={20} /></button>
             </div>
 
-            {/* ── Main Content ── */}
-            <div className="cs-body">
-              {coachFeedback ? (
-                <motion.div
-                  initial="hidden"
-                  animate="visible"
-                  variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-                  className="cs-results"
-                >
-                  {/* Score Ring */}
-                  <motion.div
-                    variants={{ hidden: { scale: 0.9, opacity: 0 }, visible: { scale: 1, opacity: 1 } }}
-                    className="cs-score-wrap"
-                  >
-                    <div className="cs-score-card">
-                      <div className="cs-score-ring-col">
-                        <div style={{ position: 'relative' }}>
-                          <svg width="160" height="160" style={{ transform: 'rotate(-90deg)' }}>
-                            <circle cx="80" cy="80" r="70" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="10" />
-                            <motion.circle
-                              cx="80" cy="80" r="70"
-                              fill="none"
-                              stroke={scoreTheme.color}
-                              strokeWidth="10"
-                              strokeLinecap="round"
-                              strokeDasharray={439.8}
-                              initial={{ strokeDashoffset: 439.8 }}
-                              animate={{ strokeDashoffset: 439.8 - (439.8 * coachFeedback.coachScore) / 100 }}
-                              transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
-                              style={{ filter: `drop-shadow(0 0 10px ${scoreTheme.glow})` }}
-                            />
-                          </svg>
-                          <div className="cs-score-center">
-                            <span className="cs-score-label">Score</span>
-                            <span className="cs-score-number" style={{ color: scoreTheme.color, textShadow: `0 0 30px ${scoreTheme.glow}` }}>
-                              {coachFeedback.coachScore}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="cs-score-meta">
-                        <div className="cs-score-tag">Diagnostic Report</div>
-                        <h4 className="cs-score-title">Elite Resonance</h4>
-                        <p className="cs-score-desc">
-                          Your project DNA shows strong <strong>curiosity triggers</strong> but slight retention decay in section 3.
-                        </p>
-                        <div className="cs-score-chips">
-                          <span className="cs-chip">Viral‑Ready</span>
-                          <span className="cs-chip">High Intent</span>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Analysis */}
-                  {coachFeedback.analysis && (
-                    <motion.div
-                      variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
-                      className="cs-analysis"
-                    >
-                      <div className="cs-analysis-icon"><Target size={18} /></div>
-                      <div>
-                        <div className="cs-section-overline">Executive Strategy</div>
-                        <p className="cs-analysis-text">"{coachFeedback.analysis}"</p>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Sections */}
-                  <div className="cs-sections">
-                    <Section title="Tactical Upgrades" icon={Sparkles} color="#7c5cfc" count={coachFeedback.quickWins?.length}>
-                      {coachFeedback.quickWins?.map((w, i) => <InteractiveCard key={i} text={w} variant="primary" />)}
-                    </Section>
-                    <Section title="Exposure Hazards" icon={AlertCircle} color="#ef4444" count={coachFeedback.hazards?.length}>
-                      {coachFeedback.hazards?.map((h, i) => <InteractiveCard key={i} text={h} variant="danger" />)}
-                    </Section>
-                    <Section title="Pattern Disruptions" icon={Zap} color="#63b3ed" count={coachFeedback.interrupts?.length}>
-                      {coachFeedback.interrupts?.map((it, i) => <InteractiveCard key={i} text={it} variant="info" />)}
-                    </Section>
+            {/* Audit Feed */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: 40, display: 'flex', flexDirection: 'column', gap: 32 }}>
+               
+               {/* Global Status */}
+               <div className="glass" style={{ padding: 28, borderRadius: 24, background: 'var(--gradient-primary)10' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                     <Sparkles size={18} color="var(--accent-primary)" />
+                     <h4 style={{ fontSize: '1rem', fontWeight: 800 }}>Engine Performance</h4>
                   </div>
-                </motion.div>
-              ) : (
-                /* ── IDLE STATE ── centered, cinematic ── */
-                <div className="cs-idle">
-                  {/* Animated orbit rings */}
-                  <div className="cs-orbit-wrap">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 16, repeat: Infinity, ease: 'linear' }}
-                      className="cs-ring cs-ring-1"
-                    />
-                    <motion.div
-                      animate={{ rotate: -360 }}
-                      transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-                      className="cs-ring cs-ring-2"
-                    />
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 7, repeat: Infinity, ease: 'linear' }}
-                      className="cs-ring cs-ring-3"
-                    />
-
-                    {/* Orbiting dot */}
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 5, repeat: Infinity, ease: 'linear' }}
-                      className="cs-orbit-dot-track"
-                    >
-                      <div className="cs-orbit-dot" />
-                    </motion.div>
-
-                    {/* Core icon */}
-                    <div className="cs-core">
-                      <motion.div
-                        animate={{ scale: [1, 1.08, 1], opacity: [0.6, 1, 0.6] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                        className="cs-core-glow"
-                      />
-                      <div className="cs-core-icon">
-                        <Brain size={36} />
-                      </div>
-                    </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Strategic Alignment</span>
+                     <span style={{ fontSize: '1.1rem', fontWeight: 950, color: 'var(--accent-success)' }}>94%</span>
                   </div>
+               </div>
 
-                  {/* Text */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.6 }}
-                    className="cs-idle-text"
-                  >
-                    <div className="cs-idle-overline">
-                      <Activity size={10} />
-                      System Standing By
-                    </div>
-                    <h3 className="cs-idle-title">Engine Idle</h3>
-                    <p className="cs-idle-sub">
-                      Your project architecture is ready for a deep neural diagnostic. Launch the AI audit to receive real-time content intelligence.
-                    </p>
-                  </motion.div>
+               {/* Sections */}
+               <AuditSection title="Resonance Alerts" icon={Activity} color="var(--accent-primary)">
+                  <AuditCard text="Retention logic in 'Titles' module currently under-indexed. Recommend 14% more punchy keywords." color="var(--accent-primary)" />
+                  <AuditCard text="Visual style DNA is 92% synced via Visual Forge assets." color="var(--accent-primary)" />
+               </AuditSection>
 
-                  {/* Stats row */}
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="cs-idle-stats"
-                  >
-                    {[
-                      { icon: Cpu, label: 'Model', val: 'GPT-4o' },
-                      { icon: Zap, label: 'Latency', val: '< 2s' },
-                      { icon: ShieldCheck, label: 'Verified', val: '98.2%' },
-                    ].map(({ icon: Icon, label, val }) => (
-                      <div key={label} className="cs-stat-chip">
-                        <Icon size={12} className="cs-stat-icon" />
-                        <div>
-                          <div className="cs-stat-label">{label}</div>
-                          <div className="cs-stat-val">{val}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </motion.div>
+               <AuditSection title="Strategic Gaps" icon={Target} color="var(--accent-warning)">
+                  <AuditCard text="Monetization vectors are silent. Check Affiliate tab for yield projections." color="var(--accent-warning)" />
+               </AuditSection>
 
-                  {/* CTA */}
-                  <motion.button
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.65 }}
-                    whileHover={{ scale: 1.04, y: -2 }}
-                    whileTap={{ scale: 0.96 }}
-                    className="cs-cta-btn"
-                    onClick={analyzeCoachFeedback}
-                    disabled={loading}
-                  >
-                    <div className="cs-cta-bg" />
-                    <span className="cs-cta-content">
-                      {loading ? (
-                        <><RefreshCw size={18} className="cs-cta-spin" /> Sequencing DNA…</>
-                      ) : (
-                        <><Sparkles size={18} /> Initiate Neural Audit</>
-                      )}
-                    </span>
-                  </motion.button>
+               <AuditSection title="Market Drift" icon={Compass} color="var(--accent-secondary)">
+                  <AuditCard text="Alpha Cluster activity detected in 'Technical Deep-dives'. Pivot Phase 02 roadmap." color="var(--accent-secondary)" />
+               </AuditSection>
 
-                  <p className="cs-idle-footnote">Engine Revision v2.4.9 · Neural Net Verified</p>
-                </div>
-              )}
             </div>
 
-            {/* ── Footer ── */}
-            {coachFeedback && (
-              <div className="cs-footer">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  className="cs-resync-btn"
-                  onClick={analyzeCoachFeedback}
-                  disabled={loading}
-                >
-                  <RefreshCw size={16} className={loading ? 'cs-cta-spin' : ''} />
-                  {loading ? 'Synchronizing…' : 'Re-Sync Intelligence'}
-                </motion.button>
-                <p className="cs-footer-note">Engine Revision v2.4.9 · Neural Net Verified</p>
-              </div>
-            )}
+            {/* Footer */}
+            <div style={{ padding: 40, borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)30' }}>
+               <button className="btn-primary" style={{ width: '100%', padding: '16px' }}>
+                  <RefreshCw size={16} />
+                  <span>Execute Full Workspace Audit</span>
+               </button>
+            </div>
           </motion.div>
         </>
       )}
@@ -288,66 +104,22 @@ export default function CoachSidebar({ isOpen, onClose }) {
   );
 }
 
-/* ── Sub-components ── */
-
-function Section({ title, icon: Icon, color, count, children }) {
-  return (
-    <div className="cs-section">
-      <div className="cs-section-header">
-        <div className="cs-section-icon-wrap" style={{ background: `${color}12`, border: `1px solid ${color}20` }}>
-          <Icon size={16} style={{ color }} />
-        </div>
-        <div>
-          <span className="cs-section-title">{title}</span>
-          <div className="cs-section-sub">Status: Optimized</div>
-        </div>
-        {count > 0 && <div className="cs-section-badge">{count}</div>}
+function AuditSection({ title, icon: Icon, color, children }) {
+   return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Icon size={16} color={color} />
+            <h4 style={{ fontSize: '0.75rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{title}</h4>
+         </div>
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>{children}</div>
       </div>
-      <div className="cs-section-cards">{children}</div>
-    </div>
-  );
+   );
 }
 
-function InteractiveCard({ text, variant = 'primary' }) {
-  const [open, setOpen] = useState(false);
-  const accent = { primary: '#7c5cfc', danger: '#ef4444', info: '#63b3ed' }[variant] ?? '#7c5cfc';
-  return (
-    <motion.div
-      variants={{ hidden: { y: 12, opacity: 0 }, visible: { y: 0, opacity: 1 } }}
-      className="cs-icard"
-      onClick={() => setOpen(!open)}
-    >
-      <div className="cs-icard-row">
-        <span className="cs-icard-dot" style={{ background: accent, boxShadow: `0 0 8px ${accent}` }} />
-        <span className="cs-icard-text">{text}</span>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} className="cs-icard-chevron">
-          <ChevronDown size={14} />
-        </motion.span>
+function AuditCard({ text, color }) {
+   return (
+      <div className="glass glass-hover" style={{ padding: 20, borderRadius: 16, borderLeft: `3px solid ${color}` }}>
+         <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>{text}</p>
       </div>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="cs-icard-expand"
-          >
-            <div className="cs-icard-grid">
-              <div className="cs-icard-meta">
-                <div className="cs-icard-meta-label"><ShieldCheck size={9} />Confidence</div>
-                <div className="cs-icard-meta-val">98.2% Accurate</div>
-              </div>
-              <div className="cs-icard-meta">
-                <div className="cs-icard-meta-label"><Microscope size={9} />Metric</div>
-                <div className="cs-icard-meta-val">Attention Retention</div>
-              </div>
-              <div className="cs-icard-insight">
-                Engine predicts a 14% increase in session duration if this upgrade is deployed within the first 30 seconds of content.
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
+   );
 }

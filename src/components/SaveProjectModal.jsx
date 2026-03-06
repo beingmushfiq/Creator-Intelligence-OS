@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Trash2, X, AlertTriangle } from 'lucide-react';
+import { Save, Trash2, X, AlertTriangle, Zap, LogOut, ChevronRight } from 'lucide-react';
 
 export function SaveProjectModal({ isOpen, onClose, onSaveAndNew, onDiscardAndNew }) {
   const [isSaving, setIsSaving] = useState(false);
@@ -15,70 +15,88 @@ export function SaveProjectModal({ isOpen, onClose, onSaveAndNew, onDiscardAndNe
 
   return (
     <AnimatePresence>
-      <motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  exit={{ opacity: 0 }}
-  className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
->
-  <motion.div
-    initial={{ scale: 0.95, opacity: 0 }}
-    animate={{ scale: 1, opacity: 1 }}
-    exit={{ scale: 0.95, opacity: 0 }}
-    className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl p-6 w-full max-w-md shadow-2xl"
-  >
-    <div className="flex items-start gap-4 mb-6">
-      <div className="w-12 h-12 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0">
-        <AlertTriangle size={24} className="text-amber-500" />
+      <div className="fixed inset-0 z-[2000] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
+        />
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          className="glass"
+          style={{
+            width: '100%',
+            maxWidth: 480,
+            padding: 40,
+            borderRadius: 32,
+            position: 'relative',
+            zIndex: 2010,
+            boxShadow: 'var(--shadow-glow)',
+            border: '1px solid var(--border-medium)',
+            background: 'rgba(15, 15, 20, 0.95)'
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <div className="glow-border" style={{ 
+              width: 80, height: 80, borderRadius: 24, 
+              background: 'rgba(245, 158, 11, 0.1)', 
+              color: '#f59e0b', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 32,
+              boxShadow: '0 0 30px rgba(245,158,11,0.2)'
+            }}>
+              <AlertTriangle size={36} />
+            </div>
+            
+            <h3 style={{ fontSize: '1.75rem', fontWeight: 900, marginBottom: 16, letterSpacing: '-0.02em' }}>Initialize New Project?</h3>
+            <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 40, fontSize: '1rem' }}>
+              Your current workspace contains active intelligence nodes. Synchronize data before terminating the session?
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 12 }}>
+               <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="btn-primary"
+                  style={{ padding: '18px', borderRadius: 16, fontSize: '1rem', fontWeight: 900, width: '100%', justifyContent: 'center' }}
+               >
+                  {isSaving ? (
+                     <Zap size={20} className="animate-spin" />
+                  ) : (
+                     <Save size={20} />
+                  )}
+                  <span>Save Intelligence & New</span>
+               </button>
+
+               <div style={{ display: 'flex', gap: 12 }}>
+                  <button
+                     onClick={onDiscardAndNew}
+                     disabled={isSaving}
+                     className="btn-ghost"
+                     style={{ flex: 1, padding: '14px', borderRadius: 12, color: 'var(--accent-error)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  >
+                     <Trash2 size={16} />
+                     <span style={{ fontWeight: 800 }}>Discard Nodes</span>
+                  </button>
+                  <button
+                     onClick={onClose}
+                     disabled={isSaving}
+                     className="btn-ghost"
+                     style={{ flex: 1, padding: '14px', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                  >
+                     <X size={16} />
+                     <span style={{ fontWeight: 800 }}>Stay in Loop</span>
+                  </button>
+               </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
-      <div>
-        <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Save Current Project?</h3>
-        <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
-          You are about to start a new project. Would you like to save your current work first?
-          <br /><br />
-          <span className="text-[var(--text-tertiary)] italic">Unsaved changes will be lost forever.</span>
-        </p>
-      </div>
-    </div>
-
-    <div className="flex justify-end gap-3">
-      <button
-        onClick={onClose}
-        disabled={isSaving}
-        className="px-4 py-2 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-      >
-        Cancel
-      </button>
-
-      <button
-        onClick={onDiscardAndNew}
-        disabled={isSaving}
-        className="px-4 py-2 rounded-lg text-sm font-medium text-red-400 hover:bg-red-500/10 transition-colors flex items-center gap-2"
-      >
-        <Trash2 size={16} />
-        Discard
-      </button>
-
-      <button
-        onClick={handleSave}
-        disabled={isSaving}
-        className="px-4 py-2 rounded-lg text-sm font-medium bg-[var(--accent-primary)] text-white hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg shadow-[var(--accent-primary)]/20"
-      >
-        {isSaving ? (
-          <>
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Saving...
-          </>
-        ) : (
-          <>
-            <Save size={16} />
-            Save & New
-          </>
-        )}
-      </button>
-    </div>
-  </motion.div>
-</motion.div>
     </AnimatePresence>
   );
 }

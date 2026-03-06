@@ -1,319 +1,193 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ImageIcon, Sparkles, Download, Wand2, 
   Loader2, Trash2, History, Image as ImageBtn,
-  Maximize2, X, Info, Zap, Camera, Layout
+  Maximize2, X, Info, Zap, Camera, Layout,
+  Layers, RefreshCw, ChevronRight, Share2,
+  Maximize
 } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { useToast } from '../context/ToastContext';
-import { VISUAL_STYLES, ASPECT_RATIOS } from '../engine/visualPrompts';
+import { useToast } from '../context/ToastContext.jsx';
+import { generateImage } from '../engine/aiService.js';
+import { VISUAL_STYLES, ASPECT_RATIOS } from '../engine/visualPrompts.js';
+import { dbService } from '../services/dbService.js';
 
 export default function VisualsTab() {
-  const { topic, assets, setAssets, generateImage, loading: contextLoading } = useCreator();
   const { addToast } = useToast();
-  
-  const [prompt, setPrompt] = useState(topic || '');
-  const [selectedStyle, setSelectedStyle] = useState('mrbeast');
-  const [selectedRatio, setSelectedRatio] = useState('landscape');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [prompt, setPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [assets, setAssets] = useState([]);
+  const [selectedStyle, setSelectedStyle] = useState(VISUAL_STYLES[0]);
+  const [selectedRatio, setSelectedRatio] = useState(ASPECT_RATIOS[0]);
   const [previewImage, setPreviewImage] = useState(null);
 
-  const handleMagicEnhance = async () => {
-    if (!prompt.trim()) return;
-    setIsEnhancing(true);
+  const loadAssets = async () => {
     try {
-      const { enhanceImagePrompt } = await import('../engine/aiService');
-      const enhanced = await enhanceImagePrompt(prompt);
-      setPrompt(enhanced);
-      addToast('success', 'Prompt enhanced with AI patterns!');
-    } catch (err) {
-      addToast('error', 'Enhancement failed');
-    } finally {
-      setIsEnhancing(false);
+      const data = await dbService.getAssets();
+      setAssets(data || []);
+    } catch (e) {
+      console.error(e);
     }
   };
+
+  useEffect(() => { loadAssets(); }, []);
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) return;
-    setIsGenerating(true);
+    if (!prompt) return;
+    setGenerating(true);
+    addToast('info', 'Engaging visual forge...');
     try {
-      await generateImage(prompt, selectedStyle, selectedRatio);
-      addToast('success', 'Image generated successfully!');
-    } catch (err) {
-      addToast('error', 'Generation failed. Check your API settings.');
+      const url = await generateImage(prompt, selectedStyle, selectedRatio.value);
+      await dbService.saveAsset({
+        type: 'image',
+        url,
+        prompt,
+        metadata: { style: selectedStyle, ratio: selectedRatio.label }
+      });
+      loadAssets();
+      addToast('success', 'Visual asset crystallized.');
+    } catch (e) {
+      addToast('error', 'Forge failure.');
     } finally {
-      setIsGenerating(false);
+      setGenerating(false);
     }
-  };
-
-  const handleDownload = (url, id) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `creator-os-asset-${id}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleDelete = (id) => {
-    setAssets(prev => prev.filter(a => a.id !== id));
-    addToast('info', 'Asset removed from project');
   };
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Visual Studio</h2>
-          <p className="tab-subtitle">Synthesize high-conversion thumbnails and cinematic assets</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Visual Forge</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>High-fidelity neural image generation & asset library orchestration</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+           <button onClick={loadAssets} className="btn-secondary" style={{ padding: '12px' }}>
+              <RefreshCw size={18} />
+           </button>
         </div>
       </div>
 
-      <div className="visuals-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, alignItems: 'start' }}>
-        
-        {/* Input Column */}
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="card" 
-          style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 24, position: 'sticky', top: 24 }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <div style={{ padding: 8, background: 'var(--accent-primary)10', color: 'var(--accent-primary)', borderRadius: 10 }}>
-                <Sparkles size={18} />
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Asset Concept</h3>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 28 }}>
+         
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
             
-            <div style={{ position: 'relative' }}>
-              <textarea 
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Describe the visual scene..."
-                style={{ 
-                  width: '100%', minHeight: 120, background: 'var(--bg-tertiary)', 
-                  border: '1px solid var(--border-subtle)', borderRadius: 16, padding: '16px',
-                  fontSize: '0.9rem', color: 'var(--text-primary)', resize: 'none',
-                  outline: 'none', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
-                }}
-              />
-              <button 
-                onClick={handleMagicEnhance}
-                disabled={isEnhancing || !prompt.trim()}
-                style={{ 
-                  position: 'absolute', bottom: 12, right: 12, 
-                  background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
-                  borderRadius: 10, padding: '4px 8px', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: 6,
-                  color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s'
-                }}
-              >
-                {isEnhancing ? <Loader2 size={12} className="spin" /> : <Wand2 size={12} />}
-                Enhance
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-             <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Visual Style</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                   {Object.values(VISUAL_STYLES).map(style => (
-                     <button
-                       key={style.id}
-                       onClick={() => setSelectedStyle(style.id)}
-                       style={{
-                         padding: '10px', borderRadius: 10, fontSize: '0.75rem', fontWeight: 600,
-                         background: selectedStyle === style.id ? 'var(--accent-primary)' : 'var(--bg-tertiary)',
-                         color: selectedStyle === style.id ? 'white' : 'var(--text-secondary)',
-                         border: '1px solid var(--border-subtle)', transition: 'all 0.2s'
-                       }}
-                     >
-                       {style.label}
-                     </button>
-                   ))}
-                </div>
-             </div>
-
-             <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 8, display: 'block' }}>Aspect Ratio</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                   {Object.values(ASPECT_RATIOS).map(ratio => (
-                     <button
-                       key={ratio.id}
-                       onClick={() => setSelectedRatio(ratio.id)}
-                       style={{
-                         flex: 1, padding: '10px', borderRadius: 10, fontSize: '0.75rem', fontWeight: 600,
-                         background: selectedRatio === ratio.id ? 'var(--accent-secondary)20' : 'var(--bg-tertiary)',
-                         color: selectedRatio === ratio.id ? 'var(--accent-secondary)' : 'var(--text-secondary)',
-                         border: `1px solid ${selectedRatio === ratio.id ? 'var(--accent-secondary)40' : 'var(--border-subtle)'}`,
-                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s'
-                       }}
-                     >
-                       <div style={{ width: ratio.id === 'landscape' ? 16 : 8, height: ratio.id === 'landscape' ? 8 : 16, border: '1.5px solid currentColor', borderRadius: 2 }} />
-                       {ratio.label}
-                     </button>
-                   ))}
-                </div>
-             </div>
-          </div>
-
-          <button 
-            onClick={handleGenerate}
-            disabled={isGenerating || !prompt.trim()}
-            className="shiny-button"
-            style={{ padding: '16px', borderRadius: 16, fontSize: '1rem' }}
-          >
-            {isGenerating ? <Loader2 size={20} className="spin" /> : <ImageIcon size={20} />}
-            <span>{isGenerating ? 'Synthesizing...' : 'Generate AI Visual'}</span>
-          </button>
-        </motion.div>
-
-        {/* Gallery Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <History size={18} color="var(--text-tertiary)" />
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Generation History</h3>
-             </div>
-             <span className="badge badge-primary">{assets.length} Assets</span>
-          </div>
-
-          {assets.length === 0 ? (
-            <div className="card" style={{ minHeight: 400, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)50', border: '2px dashed var(--border-subtle)', borderRadius: 24, padding: 48, textAlign: 'center' }}>
-               <div style={{ width: 80, height: 80, background: 'var(--bg-tertiary)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, color: 'var(--text-tertiary)', opacity: 0.5 }}>
-                  <ImageIcon size={40} />
+            {/* Forge Control Panel */}
+            <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Wand2 size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 900 }}>Forge Directive</h3>
                </div>
-               <h3 style={{ fontSize: '1.2rem', color: 'var(--text-tertiary)', marginBottom: 12 }}>Design Gallery Empty</h3>
-               <p style={{ fontSize: '0.9rem', color: 'var(--text-tertiary)', maxWidth: 300, lineHeight: 1.6 }}>Describe a sequence or thumbnail concept on the left to start generating project assets.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-               <AnimatePresence mode="popLayout">
-                 {assets.map((asset, index) => (
-                   <motion.div
-                     key={asset.id}
-                     layout
-                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
-                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                     exit={{ opacity: 0, scale: 0.9 }}
-                     transition={{ delay: index * 0.05 }}
-                     className="card"
-                     style={{ padding: 12, overflow: 'hidden', cursor: 'default' }}
-                   >
-                     <div 
-                       style={{ 
-                         width: '100%', 
-                         aspectRatio: asset.ratio === 'portrait' ? '9/16' : '16/9', 
-                         borderRadius: 12, 
-                         overflow: 'hidden', 
-                         background: 'var(--bg-primary)',
-                         position: 'relative',
-                         cursor: 'zoom-in'
-                       }}
-                       onClick={() => setPreviewImage(asset)}
-                     >
-                       <img 
-                         src={asset.url} 
-                         alt={asset.prompt}
-                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                       />
-                       <div className="asset-overlay" style={{
-                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                         background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                         opacity: 0, transition: 'opacity 0.3s ease', display: 'flex', alignItems: 'flex-end', padding: 16
-                       }}>
-                         <div style={{ color: 'white' }}>
-                            <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: 4 }}>Style: {asset.style}</div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                               {asset.prompt}
-                            </div>
-                         </div>
-                       </div>
-                     </div>
 
-                     <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-                        <div>
-                           <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                              <Camera size={10} /> {asset.ratio === 'portrait' ? '9:16 vertical' : '16:9 cinematic'}
+               <textarea 
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  placeholder="Describe your visual concept... (e.g., 'Cyberpunk city at dusk, ultra-realistic')"
+                  style={{ width: '100%', minHeight: 140, background: 'var(--bg-tertiary)50', border: '1px solid var(--border-subtle)', borderRadius: 20, padding: 24, fontSize: '1.1rem', color: 'var(--text-primary)', resize: 'none', marginBottom: 32 }}
+               />
+
+               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                     <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Visual Archetype</span>
+                     <div className="glass" style={{ padding: '4px', borderRadius: 12, display: 'flex', gap: 4 }}>
+                        {VISUAL_STYLES.slice(0, 3).map(style => (
+                           <button 
+                              key={style}
+                              onClick={() => setSelectedStyle(style)}
+                              className={`glass-hover ${selectedStyle === style ? 'glass-strong' : ''}`}
+                              style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'transparent', fontSize: '0.75rem', fontWeight: 850, color: selectedStyle === style ? 'var(--accent-primary)' : 'var(--text-tertiary)', cursor: 'pointer' }}
+                           >
+                              {style}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                     <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Aspect Protocol</span>
+                     <div className="glass" style={{ padding: '4px', borderRadius: 12, display: 'flex', gap: 4 }}>
+                        {ASPECT_RATIOS.map(ratio => (
+                           <button 
+                              key={ratio.label}
+                              onClick={() => setSelectedRatio(ratio)}
+                              className={`glass-hover ${selectedRatio.label === ratio.label ? 'glass-strong' : ''}`}
+                              style={{ flex: 1, padding: '10px', borderRadius: 8, border: 'none', background: 'transparent', fontSize: '0.75rem', fontWeight: 850, color: selectedRatio.label === ratio.label ? 'var(--accent-primary)' : 'var(--text-tertiary)', cursor: 'pointer' }}
+                           >
+                              {ratio.label}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+               </div>
+
+               <button onClick={handleGenerate} disabled={generating || !prompt} className="btn-primary" style={{ width: '100%', padding: '20px', borderRadius: 20 }}>
+                  {generating ? <RefreshCw className="animate-spin" size={20} /> : <Zap size={20} />}
+                  <span style={{ fontSize: '1.1rem', fontWeight: 950 }}>{generating ? 'Crystallizing Visuals...' : 'Execute Asset Forge'}</span>
+               </button>
+            </div>
+
+            {/* Recent Assets Library */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+               <h3 style={{ fontSize: '1.4rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <ImageIcon size={24} color="var(--accent-secondary)" /> Asset Archives
+               </h3>
+               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24 }}>
+                  {assets.map((asset, i) => (
+                     <motion.div 
+                        key={asset.id} 
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        className="glass glass-hover" 
+                        style={{ borderRadius: 24, overflow: 'hidden', position: 'relative' }}
+                     >
+                        <div style={{ aspectRatio: '1/1', background: 'var(--bg-tertiary)', overflow: 'hidden' }}>
+                           <img src={asset.url} alt={asset.prompt} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                        </div>
+                        <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                           <div className="glass" style={{ padding: '4px 8px', borderRadius: 6, fontSize: '0.6rem', fontWeight: 950, color: 'var(--text-tertiary)' }}>{asset.metadata?.ratio || '1:1'}</div>
+                           <div style={{ display: 'flex', gap: 8 }}>
+                              <button className="btn-ghost" style={{ padding: 6 }}><Download size={14} /></button>
+                              <button className="btn-ghost" style={{ padding: 6 }}><Trash2 size={14} color="var(--accent-danger)" /></button>
                            </div>
                         </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                           <button onClick={(e) => { e.stopPropagation(); handleDownload(asset.url, asset.id); }} className="btn-mini" title="Download High Res">
-                              <Download size={14} />
-                           </button>
-                           <button onClick={(e) => { e.stopPropagation(); handleDelete(asset.id); }} className="btn-mini" style={{ color: 'var(--accent-danger)', borderColor: 'var(--accent-danger)30' }} title="Delete Asset">
-                              <Trash2 size={14} />
-                           </button>
-                        </div>
-                     </div>
-                   </motion.div>
-                 ))}
-               </AnimatePresence>
+                     </motion.div>
+                  ))}
+               </div>
             </div>
-          )}
-        </div>
+         </div>
+
+         {/* Sidebar / Engine Status */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Layers size={22} />
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Engine Telemetry</h3>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>GPU Load</span>
+                     <span style={{ fontWeight: 950, color: 'var(--accent-success)' }}>Idle</span>
+                  </div>
+                  <div className="glass" style={{ padding: '16px 20px', borderRadius: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Model Rank</span>
+                     <span style={{ fontWeight: 950, color: 'var(--accent-primary)' }}>SD 5.0 LUX</span>
+                  </div>
+               </div>
+            </div>
+
+            <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <Sparkles size={18} color="var(--accent-primary)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Aesthetic Tip</span>
+               </div>
+               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  Using "Volumetric Lighting" in your directives currently results in a 14% higher engagement lift for industrial tech niches.
+               </p>
+            </div>
+         </div>
+
       </div>
-
-      {/* Modern Lightbox */}
-      <AnimatePresence>
-        {previewImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(20px)', zIndex: 1000,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40
-            }}
-            onClick={() => setPreviewImage(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              style={{ maxWidth: 'min(1400px, 90vw)', maxHeight: '85vh', position: 'relative' }}
-              onClick={e => e.stopPropagation()}
-            >
-              <img 
-                src={previewImage.url} 
-                alt="High res preview" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 24, boxShadow: '0 40px 100px rgba(0,0,0,0.8)' }}
-              />
-              <div style={{ 
-                position: 'absolute', bottom: -80, left: 0, right: 0, 
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#fff'
-              }}>
-                <div style={{ maxWidth: '70%' }}>
-                   <div style={{ fontWeight: 700, fontSize: '1.1rem', marginBottom: 4 }}>{previewImage.prompt}</div>
-                   <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', display: 'flex', gap: 16 }}>
-                      <span>Style: <strong style={{ color: '#fff' }}>{previewImage.style}</strong></span>
-                      <span>Aspect: <strong style={{ color: '#fff' }}>{previewImage.ratio}</strong></span>
-                      <span>Date: <strong style={{ color: '#fff' }}>{new Date(previewImage.id).toLocaleDateString()}</strong></span>
-                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                  <button onClick={() => handleDownload(previewImage.url, previewImage.id)} className="shiny-button" style={{ padding: '12px 24px', fontSize: '0.9rem' }}>
-                    <Download size={18} /> High-Res PNG
-                  </button>
-                  <button onClick={() => setPreviewImage(null)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', padding: '12px 24px', borderRadius: 12, cursor: 'pointer', transition: 'all 0.2s' }}>
-                    Close
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <style jsx>{`
-        .card:hover .asset-overlay {
-          opacity: 1 !important;
-        }
-      `}</style>
     </div>
   );
 }

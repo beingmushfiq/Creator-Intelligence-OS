@@ -3,264 +3,175 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, Target, Rocket, Lightbulb, ArrowUpRight, 
   Layers, ListChecks, Calendar, DollarSign, Wand2, 
-  ChevronRight, BookOpen, Clock, Zap, Star, RefreshCw,
-  TrendingUp, ShieldCheck, ChevronDown, Plus, Info
+  RefreshCw, CheckCircle2, ChevronRight, Zap, Sparkles,
+  Search, Info, CreditCard
 } from 'lucide-react';
 import { useCreator } from '../context/CreatorContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { generateProductStrategy } from '../engine/aiService.js';
 
 export default function ProductTab() {
-  const { data, loading, topic, setData } = useCreator();
+  const { data, setData, topic } = useCreator();
   const { addToast } = useToast();
-  const product = data?.product;
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [activeView, setActiveView] = useState('ladder');
+  
+  const [loading, setLoading] = useState(false);
+  const p = data?.product;
 
   const fetchProductStrategy = async () => {
-    if (!topic || isGenerating) return;
-    setIsGenerating(true);
+    if (!topic) {
+      addToast('error', 'Start a project first!');
+      return;
+    }
+    setLoading(true);
     try {
-      const result = await generateProductStrategy(topic, data?.niche || 'Digital Content', data?.genome?.dna_snippet);
-      setData(prev => ({
-        ...prev,
-        product: result
-      }));
-      addToast('success', 'Digital Product Blueprint mapped!');
+      const result = await generateProductStrategy(topic, data?.strategy);
+      setData(prev => ({ ...prev, product: result }));
+      addToast('success', 'Monetization architecture synthesized');
     } catch (err) {
-      addToast('error', 'Failed to architect digital product.');
+      addToast('error', 'Strategy failed');
     } finally {
-      setIsGenerating(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (topic && !product && !loading) {
-      fetchProductStrategy();
-    }
-  }, [topic, product, loading]);
-
-  if (isGenerating) return (
-    <div className="tab-content center-content">
-       <div style={{ textAlign: 'center' }}>
-          <RefreshCw size={48} className="spin" color="var(--accent-primary)" style={{ marginBottom: 24 }} />
-          <h3 className="text-gradient" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Architecting Digital Ecosystem</h3>
-          <p style={{ color: 'var(--text-tertiary)' }}>Calculating value ladders, curriculum modules, and launch runways...</p>
-       </div>
-    </div>
-  );
-
-  if (!product) return (
-    <div className="tab-content center-content">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="empty-state" 
-        style={{ maxWidth: 600 }}
-      >
-        <div className="empty-state-icon" style={{ background: 'var(--accent-warning)15', color: 'var(--accent-warning)' }}>
-          <ShoppingBag size={32} />
+  if (!p) return (
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass glass-hover" style={{ maxWidth: 540, padding: 48, textAlign: 'center', borderRadius: 32 }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <ShoppingBag size={40} />
         </div>
-        <h3>Product Architect</h3>
-        <p>Transition from content consumer to asset owner. Design a high-conversion digital product suite tailored to your audience DNA.</p>
-        <button onClick={fetchProductStrategy} className="shiny-button" style={{ marginTop: 24, padding: '16px 32px' }}>
-          <Wand2 size={18} /> Initialize Monetization Engine
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Economic Architecture</h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>Engineer your backend ecosystem. Generate digital products, service offerings, and high-convert funnels aligned with your audience DNA.</p>
+        <button onClick={fetchProductStrategy} className="btn-primary" style={{ padding: '16px 32px' }}>
+          <Sparkles size={18} /> Initialize Product Strategy
         </button>
       </motion.div>
     </div>
   );
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Product Architect</h2>
-          <p className="tab-subtitle">Monetizing {topic} beyond the algorithmic feed</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Product Ecosystem</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Backend monetization architecture & high-fidelity funnel mapping</p>
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <div className="view-switcher" style={{ background: 'var(--bg-tertiary)', padding: 4, borderRadius: 12, border: '1px solid var(--border-subtle)', display: 'flex' }}>
-             {['ladder', 'blueprint', 'launch'].map(v => (
-                <button 
-                  key={v}
-                  onClick={() => setActiveView(v)}
-                  style={{ 
-                    fontSize: '0.75rem', fontWeight: 700, padding: '8px 16px', borderRadius: 8, border: 'none',
-                    background: activeView === v ? 'var(--bg-secondary)' : 'transparent',
-                    color: activeView === v ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                    cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.05em'
-                  }}
-                >
-                  {v}
-                </button>
-             ))}
-          </div>
-          <button onClick={fetchProductStrategy} className="btn-secondary" style={{ padding: '8px 16px' }}>
-             <RefreshCw size={18} />
-          </button>
-        </div>
+        <button onClick={fetchProductStrategy} className="btn-secondary" style={{ padding: '12px 20px' }}>
+          {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
+        </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        {activeView === 'ladder' && (
-          <motion.div 
-            key="ladder"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 20 }}
-          >
-             {product.valueLadder.map((step, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.1 }}
-                  whileHover={{ y: -6, borderColor: 'var(--accent-primary)40' }}
-                  className="card" 
-                  style={{ padding: 24, position: 'relative', display: 'flex', flexDirection: 'column', gap: 16, background: i % 2 === 0 ? 'var(--bg-secondary)' : 'var(--bg-tertiary)' }}
-                >
-                   <div style={{ position: 'absolute', top: 12, right: 12, fontSize: '0.65rem', fontWeight: 900, color: 'var(--text-tertiary)', opacity: 0.5 }}>STEP 0{i+1}</div>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ padding: 8, background: 'var(--bg-primary)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
-                         {i === 0 && <Lightbulb size={20} color="var(--accent-success)" />}
-                         {i === 1 && <DollarSign size={20} color="var(--accent-warning)" />}
-                         {i === 2 && <Star size={20} color="var(--accent-primary)" />}
-                         {i === 3 && <Zap size={20} color="var(--accent-secondary)" />}
-                      </div>
-                      <span className="badge badge-purple" style={{ fontSize: '0.65rem' }}>{step.level}</span>
-                   </div>
-                   <div>
-                      <h4 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: 4 }}>{step.name}</h4>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--accent-primary)' }}>{step.price}</div>
-                   </div>
-                   <div style={{ padding: 16, background: 'var(--bg-primary)80', borderRadius: 16, border: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
-                      <div style={{ fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>Primary Deliverable</div>
-                      <p style={{ margin: 0, color: 'var(--text-secondary)', fontWeight: 600 }}>{step.deliverable}</p>
-                   </div>
-                </motion.div>
-             ))}
-             
-             <motion.div 
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.5 }}
-               className="card card-full" 
-               style={{ 
-                 background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)', 
-                 border: '1px solid var(--accent-success)30', padding: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap'
-               }}
-             >
-                <div style={{ flex: 1, minWidth: 300 }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                      <div style={{ padding: 8, background: 'var(--accent-success)15', color: 'var(--accent-success)', borderRadius: 10 }}><TrendingUp size={20} /></div>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800 }}>Profit Projections</h3>
-                   </div>
-                   <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', margin: 0 }}>{product.revenueModel.logic}</p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                   <div style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 4 }}>Est. First 90 Days</div>
-                   <div style={{ fontSize: '2.5rem', fontWeight: 950, color: 'var(--accent-success)', letterSpacing: '-0.02em' }}>{product.revenueModel.projection}</div>
-                </div>
-             </motion.div>
-          </motion.div>
-        )}
+      <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+        
+        {/* Flagship Product */}
+        <motion.div 
+           whileHover={{ y: -6 }}
+           className="glass" 
+           style={{ 
+             padding: 64, borderRadius: 32, background: 'var(--gradient-primary)', color: '#fff', border: 'none', position: 'relative', overflow: 'hidden'
+           }}
+        >
+           <div style={{ position: 'absolute', right: -40, top: -40, opacity: 0.1, transform: 'rotate(15deg)' }}>
+              <Rocket size={320} />
+           </div>
 
-        {activeView === 'blueprint' && (
-          <motion.div 
-            key="blueprint"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            className="card"
-            style={{ padding: 0, overflow: 'hidden' }}
-          >
-             <div style={{ padding: '32px 40px', background: 'var(--bg-secondary)50', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: 20 }}>
-                <div style={{ width: 56, height: 56, borderRadius: 16, background: 'var(--accent-primary)15', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                   <BookOpen size={28} color="var(--accent-primary)" />
-                </div>
-                <div>
-                   <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{product.blueprint.title}</h3>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                      <span>Core Curriculum Architect</span>
-                      <div className="dot" />
-                      <span>{product.blueprint.modules.length} Strategic Modules</span>
-                   </div>
-                </div>
-             </div>
-             
-             <div style={{ padding: 40 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 32 }}>
-                   {product.blueprint.modules.map((mod, i) => (
-                      <motion.div 
-                        key={i} 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="module-block"
-                      >
-                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--accent-primary)', color: '#fff', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 950, boxShadow: '0 4px 10px var(--accent-primary)40' }}>{i + 1}</div>
-                            <h4 style={{ fontSize: '1.1rem', fontWeight: 800 }}>{mod.title}</h4>
-                         </div>
-                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 40 }}>
-                            {mod.lessons.map((lesson, li) => (
-                               <div key={li} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.9rem', color: 'var(--text-secondary)', padding: '12px 16px', background: 'var(--bg-secondary)', borderRadius: 12, border: '1px solid var(--border-subtle)', transition: 'all 0.2s' }}>
-                                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-primary)40' }} />
-                                  {lesson}
-                               </div>
-                            ))}
-                         </div>
-                      </motion.div>
-                   ))}
-                </div>
-             </div>
-          </motion.div>
-        )}
+           <div style={{ position: 'relative', zIndex: 1, maxWidth: 800 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                 <div style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.2)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Target size={24} />
+                 </div>
+                 <span style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em' }}>Flagship Offering</span>
+              </div>
+              <h3 style={{ fontSize: '2.8rem', fontWeight: 950, marginBottom: 16, lineHeight: 1.1, letterSpacing: '-0.03em' }}>{p.flagship.name}</h3>
+              <p style={{ fontSize: '1.2rem', opacity: 0.9, lineHeight: 1.6, marginBottom: 40 }}>{p.flagship.concept}</p>
+              
+              <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+                 <div className="glass" style={{ background: 'rgba(255,255,255,0.1)', padding: '16px 32px', borderRadius: 16 }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', marginBottom: 4 }}>Price Tier</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 950 }}>{p.flagship.price}</div>
+                 </div>
+                 <div className="glass" style={{ background: 'rgba(255,255,255,0.1)', padding: '16px 32px', borderRadius: 16 }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 900, opacity: 0.6, textTransform: 'uppercase', marginBottom: 4 }}>Impact Projection</div>
+                    <div style={{ fontSize: '1.4rem', fontWeight: 950 }}>High ROI</div>
+                 </div>
+              </div>
+           </div>
+        </motion.div>
 
-        {activeView === 'launch' && (
-          <motion.div 
-            key="launch"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
-          >
-             {product.launchRunway.map((phase, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="card" 
-                  style={{ padding: 32, display: 'flex', gap: 40, alignItems: 'flex-start', borderLeft: '4px solid var(--accent-primary)' }}
-                >
-                   <div style={{ textAlign: 'center', minWidth: 100 }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>Phase</div>
-                      <div style={{ fontSize: '3.5rem', fontWeight: 950, color: 'var(--accent-primary)', lineHeight: 1 }}>0{phase.week}</div>
-                   </div>
-                   <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                         <Rocket size={20} color="var(--accent-secondary)" />
-                         <h4 style={{ fontSize: '1.4rem', fontWeight: 900 }}>{phase.theme}</h4>
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-                         {phase.actions.map((action, ai) => (
-                            <div key={ai} style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: '0.95rem', color: 'var(--text-secondary)', padding: '16px 20px', background: 'var(--bg-tertiary)', borderRadius: 16, border: '1px solid var(--border-subtle)' }}>
-                               <CheckCircle2 size={16} color="var(--accent-success)" style={{ flexShrink: 0 }} />
-                               {action}
-                            </div>
-                         ))}
-                      </div>
-                   </div>
-                </motion.div>
-             ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 28 }}>
+           {/* Digital Assets */}
+           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="glass" style={{ padding: 40, borderRadius: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                 <div className="glow-border" style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ListChecks size={24} />
+                 </div>
+                 <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Low-Ticket Assets</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                 {p.digitalAssets.map((asset, i) => (
+                    <div key={i} className="glass glass-hover" style={{ padding: 24, borderRadius: 20 }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                          <h4 style={{ fontWeight: 800, fontSize: '1.1rem' }}>{asset.name}</h4>
+                          <span style={{ color: 'var(--accent-success)', fontWeight: 900 }}>{asset.price}</span>
+                       </div>
+                       <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{asset.vibe}</p>
+                    </div>
+                 ))}
+              </div>
+           </motion.div>
+
+           {/* Funnel Map */}
+           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="glass" style={{ padding: 40, borderRadius: 28 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                 <div className="glow-border" style={{ width: 48, height: 48, borderRadius: 14, background: 'var(--bg-tertiary)', color: 'var(--accent-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Layers size={24} />
+                 </div>
+                 <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Ascension Funnel</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                 {p.funnel.map((step, i) => (
+                    <div key={i} style={{ position: 'relative' }}>
+                       <div className="glass glass-hover" style={{ padding: 20, borderRadius: 16, borderLeft: '4px solid var(--accent-primary)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                             <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 900 }}>{i + 1}</div>
+                             <p style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0 }}>{step}</p>
+                          </div>
+                       </div>
+                       {i < p.funnel.length - 1 && (
+                          <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+                             <ChevronRight size={16} style={{ transform: 'rotate(90deg)', opacity: 0.3 }} />
+                          </div>
+                       )}
+                    </div>
+                 ))}
+              </div>
+           </motion.div>
+        </div>
+
+        {/* Integration Hub */}
+        <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+           <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+              <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                 <CreditCard size={20} />
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Economic Integration</h3>
+           </div>
+           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              <div className="glass glass-hover" style={{ padding: '16px 28px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--accent-success)' }} />
+                 <span style={{ fontWeight: 800 }}>Stripe Connect</span>
+              </div>
+              <div className="glass glass-hover" style={{ padding: '16px 28px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 10, opacity: 0.5 }}>
+                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-tertiary)' }} />
+                 <span style={{ fontWeight: 800 }}>LemonSqueezy</span>
+              </div>
+              <div className="glass glass-hover" style={{ padding: '16px 28px', borderRadius: 14, display: 'flex', alignItems: 'center', gap: 10, opacity: 0.5 }}>
+                 <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-tertiary)' }} />
+                 <span style={{ fontWeight: 800 }}>Shopify Sync</span>
+              </div>
+           </div>
+        </div>
+      </div>
     </div>
   );
 }
-
-const CheckCircle2 = ({ size, className, color, style }) => (
-  <Star size={size} className={className} color={color} style={style} />
-);

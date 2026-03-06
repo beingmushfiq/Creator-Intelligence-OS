@@ -1,173 +1,144 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  BarChart3, 
-  Map, 
-  Search, 
-  TrendingUp, 
-  AlertTriangle, 
-  RefreshCw, 
-  Sparkles,
-  Zap,
-  Fingerprint,
-  Users
+  BarChart3, Map, Search, TrendingUp, AlertTriangle, RefreshCw, 
+  Sparkles, Zap, Fingerprint, Users, Compass, ArrowRight,
+  Globe, Activity, Target, Layers, ChevronRight, Magnet
 } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { useToast } from '../context/ToastContext';
-import { generateMarketAnalysis } from '../engine/aiService';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
+import { generateMarketAnalysis } from '../engine/aiService.js';
 
 export default function MarketTab() {
-  const { topic, data, setData, currentProjectId } = useCreator();
+  const { data, setData, topic, loading } = useCreator();
   const { addToast } = useToast();
   
-  const [loading, setLoading] = useState(false);
-  const m = data?.market;
+  const market = data?.market || {};
 
   const handleGenerateMarket = async () => {
-    if (!topic || !data) {
-      addToast('info', 'Generate a project strategy first');
+    if (!topic) {
+      addToast('error', 'Initiate project node first.');
       return;
     }
-    setLoading(true);
     try {
-      const result = await generateMarketAnalysis(topic, data);
-      setData(prev => ({ ...prev, market: result }));
-      addToast('success', 'Market intelligence synchronized');
-    } catch (err) {
-      addToast('error', 'Market analysis failed');
-    } finally {
-      setLoading(false);
+      addToast('info', 'Synchronizing market topography...');
+      const result = await generateMarketAnalysis(topic);
+      setData(prev => ({
+        ...prev,
+        market: result
+      }));
+      addToast('success', 'Topography synchronized.');
+    } catch (e) {
+      addToast('error', 'Synchronization failed.');
     }
   };
 
-  if (!currentProjectId) {
-    return (
-      <div className="tab-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', textAlign: 'center' }}>
-        <div style={{ maxWidth: 400 }}>
-          <BarChart3 size={48} color="var(--accent-primary)" style={{ marginBottom: 20 }} />
-          <h2 style={{ marginBottom: 12 }}>Competitive Intelligence</h2>
-          <p style={{ color: 'var(--text-tertiary)', marginBottom: 24 }}>
-            Analyze the competition and identify your Blue Ocean. Map out the content gaps in your niche.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!market || Object.keys(market).length === 0) return (
+     <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass glass-hover" style={{ maxWidth: 520, padding: 60, borderRadius: 32, textAlign: 'center' }}>
+           <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+              <Globe size={40} />
+           </div>
+           <h3 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: 16 }}>Market Topography</h3>
+           <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 32 }}>Analyze competitive architectures and identify high-velocity opportunity nodes within your operating niche.</p>
+           <button onClick={handleGenerateMarket} className="btn-primary" style={{ padding: '16px 32px' }}>
+              <Compass size={18} /> Map Territory
+           </button>
+        </motion.div>
+     </div>
+  );
 
   return (
-    <div className="tab-content">
-      <div className="tab-header">
-        <div>
-          <h2 className="tab-title text-gradient">Market Intelligence</h2>
-          <p className="tab-subtitle">Competitor mapping & content gap identification</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Market Architecture</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Competitive node mapping & recursive opportunity diagnostics</p>
         </div>
-        <button 
-          className="btn-primary" 
-          onClick={handleGenerateMarket} 
-          disabled={loading}
-        >
-          {loading ? <RefreshCw className="animate-spin" size={16} /> : <Search size={16} />}
-          <span>{m ? 'Refresh Analysis' : 'Scan Market'}</span>
+        <button onClick={handleGenerateMarket} className="btn-secondary" disabled={loading} style={{ padding: '12px' }}>
+          {loading ? <RefreshCw className="animate-spin" size={18} /> : <RefreshCw size={18} />}
         </button>
       </div>
 
-      {!m ? (
-        <div style={{ 
-          display: 'flex', flexDirection: 'column', alignItems: 'center', 
-          justifyContent: 'center', minHeight: '50vh', background: 'var(--bg-secondary)', 
-          borderRadius: 16, border: '1px dashed var(--border-subtle)', margin: '0 20px'
-        }}>
-          <Map size={40} color="var(--text-tertiary)" style={{ marginBottom: 16, opacity: 0.5 }} />
-          <p style={{ color: 'var(--text-tertiary)' }}>No market map generated for this mission.</p>
-          <button className="btn-ghost" onClick={handleGenerateMarket} style={{ marginTop: 12 }}>
-            Initiate Competitive Scan
-          </button>
-        </div>
-      ) : (
-        <div className="card-grid stagger-children">
-          
-          {/* Blue Ocean Strategy - Main Highlight */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="card card-full" 
-            style={{ 
-              background: 'linear-gradient(135deg, rgba(0, 212, 255, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%)',
-              border: '1px solid var(--accent-secondary)30',
-              padding: '32px'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <div style={{ padding: 10, background: 'var(--accent-secondary)20', borderRadius: 12, color: 'var(--accent-secondary)' }}>
-                <Sparkles size={24} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800 }}>Blue Ocean Strategy</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Your unique market differentiator</p>
-              </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 28, marginBottom: 48 }}>
+         
+         {/* Competitive Landscape */}
+         <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+               <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Map size={22} />
+               </div>
+               <h3 style={{ fontSize: '1.3rem', fontWeight: 900 }}>Competitive Landscape</h3>
             </div>
+            <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+               {market.competitors?.map((comp, i) => (
+                  <motion.div key={i} whileHover={{ x: 8 }} className="glass glass-hover" style={{ padding: 24, borderRadius: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <div className="glass" style={{ width: 40, height: 40, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-secondary)' }}>
+                           <Users size={18} />
+                        </div>
+                        <div>
+                           <div style={{ fontSize: '1rem', fontWeight: 800 }}>{comp.name}</div>
+                           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-tertiary)' }}>Primary Node</div>
+                        </div>
+                     </div>
+                     <div className="glass" style={{ padding: '4px 12px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-primary)' }}>ALPHA-RANK</div>
+                  </motion.div>
+               ))}
+            </div>
+         </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
-              <div>
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-secondary)', marginBottom: 8 }}>{m.blueOceanAngle.title}</h4>
-                <p style={{ fontSize: '1rem', lineHeight: 1.6, color: 'var(--text-primary)' }}>{m.blueOceanAngle.concept}</p>
-              </div>
-              <div style={{ background: 'var(--bg-primary)', padding: '20px', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, color: 'var(--accent-success)' }}>
-                  <Fingerprint size={16} />
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Differentiator</span>
-                </div>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{m.blueOceanAngle.differentiation}</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Competitor Archetypes */}
-          <div className="card" style={{ gridColumn: 'span 2' }}>
-            <div className="card-header">
-              <div className="card-title-group">
-                <div className="card-icon"><Users size={16} /></div>
-                <h3 className="card-title">Competitor Archetypes</h3>
-              </div>
-            </div>
-            <div className="card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
-                {m.archetypes.map((a, i) => (
-                  <div key={i} style={{ padding: 16, background: 'var(--bg-tertiary)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ fontWeight: 700, marginBottom: 4, color: 'var(--text-primary)' }}>{a.name}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 12 }}>{a.approach}</div>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: '0.75rem', color: '#ef4444' }}>
-                      <AlertTriangle size={12} style={{ marginTop: 2 }} />
-                      <span>Gap: {a.weakness}</span>
-                    </div>
+         {/* Opportunity Sidebar */}
+         <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div className="glass" style={{ padding: 32, borderRadius: 28 }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
+                  <div className="glow-border" style={{ width: 44, height: 44, borderRadius: 12, background: 'var(--bg-tertiary)', color: 'var(--accent-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                     <Target size={22} />
                   </div>
-                ))}
-              </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 900 }}>Velocity Gaps</h3>
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {market.gaps?.map((gap, i) => (
+                     <div key={i} className="glass glass-hover" style={{ padding: '16px 20px', borderRadius: 16, borderLeft: '3px solid var(--accent-warning)' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{gap.title}</div>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 900, color: 'var(--accent-warning)', textTransform: 'uppercase', marginTop: 4 }}>High Potential</div>
+                     </div>
+                  ))}
+               </div>
             </div>
-          </div>
 
-          {/* Content Gaps */}
-          <div className="card">
-            <div className="card-header">
-              <div className="card-title-group">
-                <div className="card-icon" style={{ color: 'var(--accent-primary)' }}><Zap size={16} /></div>
-                <h3 className="card-title">Underserved Gaps</h3>
-              </div>
+            <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20' }}>
+               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <Sparkles size={18} color="var(--accent-primary)" />
+                  <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Market Tip</span>
+               </div>
+               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                  Competitor nodes are currently saturated in "Top-of-Funnel" content. Recommend pivoting to "High-Intent" technical narratives.
+               </p>
             </div>
-            <div className="card-body">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {m.gaps.map((gap, i) => (
-                  <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <div style={{ width: 20, h: 20, borderRadius: '50%', background: 'var(--accent-primary)20', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0, marginTop: 2 }}>{i+1}</div>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{gap}</p>
+         </div>
+
+      </div>
+
+      {/* Strategic Positioning */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+         <h3 style={{ fontSize: '1.3rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Activity size={22} color="var(--accent-success)" /> Positioning Protocols
+         </h3>
+         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24 }}>
+            {market.positioning?.map((pos, i) => (
+               <motion.div key={i} whileHover={{ y: -6 }} className="glass glass-hover" style={{ padding: 28, borderRadius: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                     <div className="glass" style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-success)' }}>
+                        <Fingerprint size={16} />
+                     </div>
+                     <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{pos.id}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      )}
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{pos.description}</p>
+               </motion.div>
+            ))}
+         </div>
+      </div>
     </div>
   );
 }

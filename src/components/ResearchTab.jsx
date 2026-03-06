@@ -1,177 +1,126 @@
 import React from 'react';
-import { Search, Users, Brain, Radio } from 'lucide-react';
-import { useCreator } from '../context/CreatorContext';
-import { RegenerateButton } from './ui/RegenerateButton';
-import { ExportButton } from './ui/ExportButton';
+import { 
+  Search, Users, Brain, Radio, Sparkles, Target, Activity, 
+  ChevronRight, ArrowRight, Activity as ActivityIcon, Compass,
+  Layers, Zap, Globe, MessageSquare
+} from 'lucide-react';
+import { useCreator } from '../context/CreatorContext.jsx';
+import { RegenerateButton } from './ui/RegenerateButton.jsx';
+import { ExportButton } from './ui/ExportButton.jsx';
 import { motion } from 'framer-motion';
 
 export default function ResearchTab() {
-  const { data, loading, regenerateSection } = useCreator();
+  const { data, loading, regenerateSection, topic } = useCreator();
   const r = data?.research;
 
   if (!r) return <EmptyState />;
 
   return (
-    <div className="tab-content">
-      <div className="tab-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 20 }}>
-        <div>
-          <h2 className="tab-title text-gradient">Deep Analysis Mode</h2>
-          <p className="tab-subtitle">Myth matrix, incentive mapping, cognitive bias analysis & algorithmic amplification</p>
+    <div className="tab-content animate-slide-up">
+      <div className="tab-header" style={{ marginBottom: 40 }}>
+        <div className="stagger-children">
+          <h2 className="tab-title text-gradient-aurora" style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-0.04em' }}>Narrative Intelligence</h2>
+          <p className="tab-subtitle" style={{ fontSize: '1.1rem' }}>Psychometric mapping & predictive market drift analysis</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 10 }}>
           <ExportButton section="research" data={r} />
           <RegenerateButton onClick={() => regenerateSection('research')} loading={loading} />
         </div>
       </div>
 
-      {/* Myth Matrix */}
-      <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
-        The Myth vs. Reality Matrix
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
-        {r.mythMatrix.map((m, i) => (
-          <motion.div 
-            key={i} 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            whileHover={{ scale: 1.01, borderColor: 'var(--accent-primary)40' }}
-            className="card" 
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr)) auto', gap: 24, padding: 24, alignItems: 'center' }}
-          >
-            <div>
-              <div className="meta-label" style={{ marginBottom: 8, color: 'var(--accent-danger)', fontWeight: 800, fontSize: '0.65rem', textTransform: 'uppercase' }}>Public Myth</div>
-              <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{m.myth}</div>
-            </div>
-            <div className="myth-divider" style={{ paddingLeft: 24, borderLeft: '1px solid var(--border-subtle)' }}>
-              <div className="meta-label" style={{ marginBottom: 8, color: 'var(--accent-success)', fontWeight: 800, fontSize: '0.65rem', textTransform: 'uppercase' }}>Structural Reality</div>
-              <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 600, lineHeight: 1.5 }}>{m.reality}</div>
-            </div>
-            <div style={{ textAlign: 'center', paddingLeft: 24 }}>
-              <div className="meta-label" style={{ marginBottom: 8, fontSize: '0.65rem' }}>Match</div>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                background: m.confidence > 85 ? 'var(--accent-success)15' : 'var(--accent-warning)15',
-                color: m.confidence > 85 ? 'var(--accent-success)' : 'var(--accent-warning)',
-                fontWeight: 800,
-                fontSize: '0.85rem',
-                border: `1px solid ${m.confidence > 85 ? 'var(--accent-success)30' : 'var(--accent-warning)30'}`
-              }}>
-                {m.confidence}%
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 28, marginBottom: 48 }}>
+        
+        {/* Core Narrative Hero */}
+        <motion.div whileHover={{ y: -6 }} className="glass glass-hover" style={{ padding: 60, borderRadius: 40, border: '1px solid var(--accent-primary)30', position: 'relative', overflow: 'hidden' }}>
+           <div style={{ position: 'absolute', right: -40, top: -40, opacity: 0.1, transform: 'rotate(15deg)' }}>
+              <Brain size={320} color="var(--accent-primary)" />
+           </div>
+           
+           <div style={{ position: 'relative', zIndex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+                 <div className="glow-border" style={{ width: 44, height: 44, background: 'var(--bg-tertiary)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+                    <Target size={24} />
+                 </div>
+                 <span style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'var(--text-tertiary)' }}>Primary Narrative Arc</span>
               </div>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Incentive Map */}
-      <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
-        Stakeholder Incentive Mapping
-      </h3>
-      <div className="card-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 24, marginBottom: 40 }}>
-        {r.incentiveMap.map((item, i) => (
-          <motion.div 
-            key={i} 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            whileHover={{ y: -4, borderColor: 'var(--accent-warning)' }}
-            className="card" 
-            style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ padding: 8, background: 'var(--accent-warning)10', borderRadius: 10, color: 'var(--accent-warning)' }}>
-                  <Users size={18} />
-                </div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{item.actor}</h3>
+              <h3 style={{ fontSize: '3rem', fontWeight: 950, marginBottom: 24, lineHeight: 1.1, letterSpacing: '-0.04em', color: 'var(--text-primary)' }}>{r.narrativeTitle || topic}</h3>
+              <p style={{ fontSize: '1.4rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, maxWidth: 840, fontWeight: 500 }}>{r.coreNarrative}</p>
+              
+              <div style={{ display: 'flex', gap: 16, marginTop: 40 }}>
+                 <div className="glass" style={{ padding: '8px 20px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 900, color: 'var(--accent-success)', background: 'rgba(34, 197, 94, 0.05)' }}>RESONANCE: 94%</div>
+                 <div className="glass" style={{ padding: '8px 20px', borderRadius: 100, fontSize: '0.8rem', fontWeight: 900, color: 'var(--accent-primary)', background: 'rgba(124, 92, 252, 0.05)' }}>VELOCITY: HIGH</div>
               </div>
-              <span className={`badge ${item.impact === 'High' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: '0.65rem' }}>{item.impact} Impact</span>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4, fontWeight: 700 }}>Primary Incentive</div>
-              <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>{item.incentive}</div>
-            </div>
-            <div style={{ padding: 12, background: 'var(--bg-tertiary)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', marginBottom: 4, fontWeight: 700 }}>Predicted Behavior</div>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{item.behavior}</div>
-            </div>
-          </motion.div>
-        ))}
+           </div>
+        </motion.div>
+
+        {/* Sidebar Diagnostics */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+           <div className="glass" style={{ padding: 40, borderRadius: 32 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                 <Compass size={22} color="var(--accent-secondary)" />
+                 <h3 style={{ fontSize: '1.2rem', fontWeight: 900 }}>Market Signals</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                 {r.marketDrift?.map((d, i) => (
+                    <div key={i} className="glass glass-hover" style={{ padding: 20, borderRadius: 16, borderLeft: '3px solid var(--accent-primary)' }}>
+                       <div style={{ fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-primary)', marginBottom: 6 }}>SIGNAL 0{i+1}</div>
+                       <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>{d.signal}</div>
+                    </div>
+                 ))}
+              </div>
+           </div>
+
+           <div className="glass glass-hover" style={{ padding: 32, borderRadius: 28, background: 'var(--gradient-primary)05', border: '1px solid var(--accent-primary)20', marginTop: 'auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                 <Sparkles size={18} color="var(--accent-primary)" />
+                 <span style={{ fontSize: '0.7rem', fontWeight: 950, color: 'var(--accent-primary)', textTransform: 'uppercase' }}>Research Tip</span>
+              </div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                 Current psychometric mapping suggests a high curiosity gap resonance for your primary narrative title. Optimal for sub-15s retention loops.
+              </p>
+           </div>
+        </div>
       </div>
 
-      {/* Cognitive Biases */}
-      <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
-        Cognitive Bias Analysis
-      </h3>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 40 }}>
-        {r.cognitiveBiases.map((b, i) => (
-          <motion.div 
-            key={i} 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            whileHover={{ scale: 1.01 }}
-            className="card" 
-            style={{ padding: 24, borderLeft: `4px solid ${b.severity === 'High' ? 'var(--accent-danger)' : 'var(--accent-warning)'}` }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <Brain size={18} color={b.severity === 'High' ? 'var(--accent-danger)' : 'var(--accent-warning)'} />
-                  <h4 style={{ fontWeight: 800, fontSize: '1rem' }}>{b.bias}</h4>
-               </div>
-               <span className={`badge ${b.severity === 'High' ? 'badge-red' : 'badge-yellow'}`} style={{ fontSize: '0.65rem' }}>Severity: {b.severity}</span>
-            </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 16 }}>{b.description}</p>
-            <div style={{ fontSize: '0.85rem', padding: '8px 12px', background: 'var(--bg-tertiary)', borderRadius: 8, display: 'inline-block', border: '1px solid var(--border-subtle)' }}>
-               <span style={{ color: 'var(--text-tertiary)', fontWeight: 600 }}>Exploited by:</span> {b.exploitedBy}
-            </div>
-          </motion.div>
-        ))}
+      {/* Psychographic Segments */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+         <h3 style={{ fontSize: '1.4rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Users size={24} color="var(--accent-secondary)" /> Targeted Psychographics
+         </h3>
+         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 28 }}>
+            {r.psychographics?.map((p, i) => (
+               <motion.div key={i} whileHover={{ y: -8 }} className="glass glass-hover" style={{ padding: 40, borderRadius: 32 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                     <div className="glass" style={{ padding: '6px 14px', borderRadius: 8, fontSize: '0.65rem', fontWeight: 950, color: 'var(--accent-secondary)' }}>SEGMENT 0{i+1}</div>
+                     <ActivityIcon size={18} style={{ opacity: 0.2 }} />
+                  </div>
+                  <h4 style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 12 }}>{p.segment}</h4>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>{p.description}</p>
+                  
+                  <div style={{ marginTop: 28, paddingTop: 28, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <HeartPulse size={14} color="var(--accent-success)" />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 800 }}>Resonance Lock: {p.resonance}%</span>
+                     </div>
+                     <ChevronRight size={18} style={{ opacity: 0.3 }} />
+                  </div>
+               </motion.div>
+            ))}
+         </div>
       </div>
-
-      {/* Algorithmic Amplification */}
-      <h3 style={{ marginBottom: 20, color: 'var(--text-primary)', fontSize: '1.1rem', fontWeight: 800 }}>
-        Algorithmic Amplification
-      </h3>
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ y: -4 }}
-        className="card" 
-        style={{ padding: 24, background: 'linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%)', border: '1px solid var(--accent-secondary)30' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-          <div style={{ padding: 8, background: 'var(--accent-secondary)20', borderRadius: 10, color: 'var(--accent-secondary)' }}>
-            <Radio size={18} />
-          </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 800 }}>Platform Velocity Patterns</h3>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-          {r.algorithmicAmplification.map((item, i) => (
-            <div key={i} style={{ display: 'flex', gap: 12, padding: 16, background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border-subtle)' }}>
-               <div style={{ width: 4, height: '100%', background: 'var(--accent-secondary)', borderRadius: 2 }} />
-               <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item}</div>
-            </div>
-          ))}
-        </div>
-      </motion.div>
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="tab-content">
-      <div className="empty-state">
-        <div className="empty-state-icon"><Search size={32} /></div>
-        <h3>Deep Analysis Mode</h3>
-        <p>Generate a topic to activate deep research analysis — myth matrices, incentive maps, cognitive bias breakdowns, and algorithmic amplification patterns.</p>
+    <div className="tab-content center-content" style={{ minHeight: '60vh' }}>
+      <div className="glass glass-hover" style={{ maxWidth: 480, padding: 48, borderRadius: 32, textAlign: 'center' }}>
+        <div className="glow-border" style={{ width: 80, height: 80, borderRadius: 24, background: 'var(--bg-tertiary)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          <Search size={40} />
+        </div>
+        <h3 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: 16 }}>Narrative Research</h3>
+        <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6 }}>Initialize your topic node above to unlock high-fidelity psychometric mapping and market trajectory diagnostics.</p>
       </div>
     </div>
   );
