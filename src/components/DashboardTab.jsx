@@ -14,7 +14,7 @@ import { dbService } from '../services/dbService.js';
 
 export default function DashboardTab() {
   const { user } = useAuth();
-  const { topic, activeWorkspace, workspaces } = useCreator();
+  const { topic, activeWorkspace, workspaces, regenerateSection, analyzeCoachFeedback, loading: creatorLoading } = useCreator();
   const [stats, setStats] = useState({ 
     totalProjects: 0, 
     activeTasks: 0, 
@@ -144,8 +144,14 @@ export default function DashboardTab() {
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
                  "Your last workspace session showed a 12% increase in retention pacing. Recommend applying the 'Visual Retention DNA' module to current trajectory."
               </p>
-              <button className="btn-secondary" style={{ width: '100%', padding: '12px' }}>
-                 <span>Deploy Insight</span>
+              <button 
+                className="btn-secondary" 
+                onClick={analyzeCoachFeedback}
+                disabled={creatorLoading || !topic}
+                style={{ width: '100%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+              >
+                 {creatorLoading ? <RefreshCw className="animate-spin" size={14} /> : null}
+                 <span>{creatorLoading ? 'Processing...' : 'Deploy Insight'}</span>
               </button>
            </div>
 
@@ -156,9 +162,14 @@ export default function DashboardTab() {
               </div>
               <h4 style={{ fontSize: '1.1rem', fontWeight: 900, marginBottom: 12 }}>Regenerate Marketing Arc</h4>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 20 }}>Refresh your monetization strategy based on latest market trends.</p>
-              <button className="btn-primary" style={{ width: '100%', padding: '12px' }}>
-                 <RefreshCw size={14} />
-                 <span>Execute Refresh</span>
+              <button 
+                className="btn-primary" 
+                onClick={() => regenerateSection('product')}
+                disabled={creatorLoading || !topic}
+                style={{ width: '100%', padding: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+              >
+                 {creatorLoading ? <RefreshCw className="animate-spin" size={14} /> : <RefreshCw size={14} />}
+                 <span>{creatorLoading ? 'Regenerating...' : 'Execute Refresh'}</span>
               </button>
            </div>
         </div>

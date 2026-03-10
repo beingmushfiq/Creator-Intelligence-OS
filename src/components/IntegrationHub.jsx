@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Globe, Link2, Check, Settings, Database, MessageSquare, Share2, Zap, Shield, PlugZap,
-  ChevronRight, ArrowRight, Zap as ZapIcon, Info, Sparkles, Layers
+  ChevronRight, ArrowRight, Zap as ZapIcon, Info, Sparkles, Layers, RefreshCw
 } from 'lucide-react';
+import { useCreator } from '../context/CreatorContext.jsx';
 
 const INTEGRATIONS = [
   { id: 'youtube',   name: 'YouTube',          desc: 'Publish videos & manage channel metadata directly from your OS.',    icon: Share2,       color: '#FF0000', connected: false },
@@ -15,12 +16,63 @@ const INTEGRATIONS = [
 ];
 
 export default function IntegrationHub() {
+  const { optimizeWorkflows, loading: creatorLoading } = useCreator();
   const [integrations, setIntegrations] = useState(INTEGRATIONS);
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-  const toggle = (id) =>
+  useEffect(() => {
+    checkYTStatus();
+    
+    const handleMessage = (event) => {
+      if (event.data.type === 'YOUTUBE_CONNECTED') {
+        checkYTStatus();
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  const checkYTStatus = async () => {
+    try {
+      const res = await fetch(`${API_URL}/youtube/status`);
+      const data = await res.json();
+      setIntegrations(prev => prev.map(i => 
+        i.id === 'youtube' ? { ...i, connected: data.connected } : i
+      ));
+    } catch (e) {
+      console.error('Failed to check YT status', e);
+    }
+  };
+
+  const handleConnectYT = async () => {
+    try {
+      const res = await fetch(`${API_URL}/youtube/auth-url`);
+      const { url } = await res.json();
+      const width = 600, height = 700;
+      const left = (window.innerWidth - width) / 2;
+      const top = (window.innerHeight - height) / 2;
+      window.open(url, 'YouTube Authentication', `width=${width},height=${height},left=${left},top=${top}`);
+    } catch (e) {
+      console.error('Failed to get auth URL', e);
+    }
+  };
+
+  const toggle = (id) => {
+    if (id === 'youtube') {
+      const yt = integrations.find(i => i.id === 'youtube');
+      if (!yt.connected) {
+        handleConnectYT();
+      } else {
+        // Simple mock disconnect for now or we could add a backend endpoint
+        setIntegrations(prev => prev.map(i => i.id === id ? { ...i, connected: false } : i));
+      }
+      return;
+    }
+    
     setIntegrations(prev =>
       prev.map(i => (i.id === id ? { ...i, connected: !i.connected } : i))
     );
+  };
 
   const activeCount = integrations.filter(i => i.connected).length;
 
@@ -87,7 +139,15 @@ export default function IntegrationHub() {
                   <span className="glass" style={{ padding: '6px 14px', borderRadius: 100, fontSize: '0.75rem', fontWeight: 900, color: 'var(--accent-primary)' }}>REAL-TIME SYNC</span>
                </div>
             </div>
-            <button className="btn-primary" style={{ padding: '20px 48px', borderRadius: 20, fontSize: '1.1rem', fontWeight: 950 }}>Optimize Workflows</button>
+            <button 
+               className="btn-primary" 
+               onClick={optimizeWorkflows}
+               disabled={creatorLoading}
+               style={{ padding: '20px 48px', borderRadius: 20, fontSize: '1.1rem', fontWeight: 950, display: 'flex', alignItems: 'center', gap: 12 }}
+            >
+               {creatorLoading ? <RefreshCw className="animate-spin" size={20} /> : <Sparkles size={20} />}
+               <span>{creatorLoading ? 'Syncing...' : 'Optimize Workflows'}</span>
+            </button>
          </div>
       </div>
     </div>

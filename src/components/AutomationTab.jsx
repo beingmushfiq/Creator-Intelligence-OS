@@ -21,6 +21,16 @@ export default function AutomationTab() {
   const [loading, setLoading] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [youtubeConnected, setYoutubeConnected] = useState(false);
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+  useEffect(() => {
+    fetch(`${API_URL}/youtube/status`)
+      .then(res => res.json())
+      .then(data => setYoutubeConnected(data.connected))
+      .catch(e => console.error('Status check failed', e));
+  }, []);
 
   const workflow = data?.automation?.workflow || [];
   const metadata = data?.automation?.metadata || null;
@@ -62,12 +72,33 @@ export default function AutomationTab() {
   };
 
   const handlePublish = async () => {
+    if (!youtubeConnected) {
+      addToast('error', 'YouTube bridge inactive. Establish link in Integration Hub.');
+      return;
+    }
+
     setPublishing(true);
     try {
-      await new Promise(r => setTimeout(r, 2000));
-      addToast('success', 'Simulation: Content published to all nodes');
+      const response = await fetch(`${API_URL}/youtube/publish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: metadata?.title || topic,
+          description: metadata?.description || 'Generated via Creator OS',
+          tags: metadata?.tags || [],
+          videoData: null // In real app, this would be the actual video blob/path
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Deployment failed');
+      }
+
+      const result = await response.json();
+      addToast('success', `Live Deploy Successful! Channel: ${result.channel.title}`);
     } catch (err) {
-      addToast('error', 'Deployment failed');
+      addToast('error', err.message || 'Deployment failed');
     } finally {
       setPublishing(false);
     }

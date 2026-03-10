@@ -272,33 +272,6 @@ function AppContent() {
     addToast('info', 'New project started (unsaved changes discarded)');
   };
   
-  const ActiveComponent = TAB_COMPONENTS[activeTab] || DashboardTab;
-
-  // Show loading state or login screen
-  if (loading) return (
-    <div className="center-content" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
-       <motion.div 
-         initial={{ opacity: 0, scale: 0.9 }}
-         animate={{ opacity: 1, scale: 1 }}
-         style={{ textAlign: 'center' }}
-       >
-          <div className="sidebar-logo-icon" style={{ width: 64, height: 64, margin: '0 auto 32px' }}>
-             <Zap size={32} color="#fff" />
-          </div>
-          <div style={{ fontSize: '0.85rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12 }}>System Initializing</div>
-          <div style={{ width: 200, height: 4, background: 'var(--bg-tertiary)', borderRadius: 2, margin: '0 auto', overflow: 'hidden' }}>
-             <motion.div 
-               animate={{ x: [-200, 200] }}
-               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-               style={{ width: 100, height: '100%', background: 'var(--gradient-primary)' }} 
-             />
-          </div>
-       </motion.div>
-    </div>
-  );
-  
-  if (!user) return <AuthPage />;
-  
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -361,6 +334,34 @@ function AppContent() {
     const interval = setInterval(pollActivity, 10000); // Check every 10s
     return () => clearInterval(interval);
   }, [user, activeWorkspace, lastSeenActivity, addToast]);
+
+  const ActiveComponent = TAB_COMPONENTS[activeTab] || DashboardTab;
+
+  // Show loading state or login screen
+  if (loading) return (
+    <div className="center-content" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+       <motion.div 
+         initial={{ opacity: 0, scale: 0.9 }}
+         animate={{ opacity: 1, scale: 1 }}
+         style={{ textAlign: 'center' }}
+       >
+          <div className="sidebar-logo-icon" style={{ width: 64, height: 64, margin: '0 auto 32px' }}>
+             <Zap size={32} color="#fff" />
+          </div>
+          <div style={{ fontSize: '0.85rem', fontWeight: 950, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 12 }}>System Initializing</div>
+          <div style={{ width: 200, height: 4, background: 'var(--bg-tertiary)', borderRadius: 2, margin: '0 auto', overflow: 'hidden' }}>
+             <motion.div 
+               animate={{ x: [-200, 200] }}
+               transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+               style={{ width: 100, height: '100%', background: 'var(--gradient-primary)' }} 
+             />
+          </div>
+       </motion.div>
+    </div>
+  );
+  
+  if (!user) return <AuthPage />;
+  
 
   return (
     <div className="app-layout">
@@ -447,34 +448,38 @@ function AppContent() {
                 width: '100%',
                 textAlign: 'left',
                 border: `1px solid ${showCoach ? 'var(--accent-primary)' : 'var(--border-medium)'}`,
-                borderRadius: 24,
-                padding: '20px 16px',
+                borderRadius: '16px',
+                padding: '14px 12px',
                 position: 'relative',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 boxShadow: showCoach ? 'var(--shadow-glow)' : 'var(--shadow-md)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12
               }}
             >
-              {/* Top row: label + live badge */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                <span style={{ fontSize: '0.6rem', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--accent-primary)', opacity: 0.8 }}>Neural Engine</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 100, background: showCoach ? 'rgba(124,92,252,0.1)' : 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 6, height: 6, borderRadius: '50%', background: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)' }} />
-                  <span style={{ fontSize: '0.6rem', fontWeight: 800, color: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)', letterSpacing: '0.05em' }}>{showCoach ? 'ACTIVE' : 'READY'}</span>
-                </div>
+              {/* Centre: Brain icon with pulse ring */}
+              <div className="glow-border" style={{ 
+                width: 40, height: 40, borderRadius: 10, 
+                background: showCoach ? 'var(--gradient-primary)' : 'var(--bg-tertiary)', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                color: '#fff', flexShrink: 0 
+              }}>
+                <Brain size={20} />
               </div>
 
-              {/* Centre: Brain icon with pulse ring + title */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ position: 'relative' }}>
-                  <div className="glow-border" style={{ width: 48, height: 48, borderRadius: 16, background: showCoach ? 'var(--gradient-primary)' : 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    <Brain size={24} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Top row: label + live badge */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                  <span style={{ fontSize: '0.55rem', fontWeight: 900, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--accent-primary)', opacity: 0.8 }}>Neural Engine</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                    <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ duration: 2, repeat: Infinity }} style={{ width: 4, height: 4, borderRadius: '50%', background: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)' }} />
+                    <span style={{ fontSize: '0.55rem', fontWeight: 800, color: showCoach ? 'var(--accent-primary)' : 'var(--accent-success)' }}>{showCoach ? 'ACTIVE' : 'READY'}</span>
                   </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 2 }}>Intelligence Hub</div>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>AI Creator Audit</div>
-                </div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Intelligence Hub</div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Execute Strategic Audit</div>
               </div>
             </motion.button>
           </div>

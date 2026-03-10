@@ -82,9 +82,15 @@ export default function SettingsPage() {
 
   const loadProviders = async () => {
      try {
-        const p = await getAvailableProviders();
-        setProviders(p);
-     } catch(e) {}
+        const res = await getAvailableProviders();
+        if (res && Array.isArray(res.providers)) {
+           setProviders(res.providers);
+        } else if (Array.isArray(res)) {
+           setProviders(res);
+        }
+     } catch(e) {
+        console.error('Failed to load intelligence providers:', e);
+     }
   };
 
   const check = async () => {
@@ -131,7 +137,7 @@ export default function SettingsPage() {
            <div className="glass" style={{ padding: 32, borderRadius: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--gradient-primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 900 }}>
-                    {user?.email?.[0].toUpperCase()}
+                    {user?.email?.[0]?.toUpperCase() || 'U'}
                  </div>
                  <div>
                     <h4 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>{user?.email}</h4>
@@ -149,7 +155,7 @@ export default function SettingsPage() {
         <Section title="Neural Links (API Keys)" icon={Key} delay={0.2}>
            <div className="glass" style={{ padding: 32, borderRadius: 24, marginBottom: 24 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-                 {providers.map(p => (
+                 {Array.isArray(providers) && providers.map(p => (
                     <ApiKeyInput 
                        key={p.id} 
                        field={p} 
@@ -184,7 +190,7 @@ export default function SettingsPage() {
                     <span style={{ fontWeight: 900 }}>Core Connectivity</span>
                  </div>
                  <div style={{ fontSize: '1.5rem', fontWeight: 950, color: health.status === 'online' ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
-                    {health.status.toUpperCase()}
+                    {health?.status?.toUpperCase() || 'UNKNOWN'}
                  </div>
               </div>
               <div className="glass" style={{ padding: 24, borderRadius: 20, textAlign: 'center' }}>

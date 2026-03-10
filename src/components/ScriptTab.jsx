@@ -11,7 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCreator } from '../context/CreatorContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import { translateText, generateAudio } from '../engine/aiService.js';
+import { translateContent, generateSpeech } from '../engine/aiService.js';
 import EditableText from './ui/EditableText.jsx';
 
 const LANGUAGES = [
@@ -37,7 +37,7 @@ export default function ScriptTab() {
     setTranslating(true);
     try {
       addToast('info', 'Neural translation engaged...');
-      const translated = await translateText(JSON.stringify(scenes), langCode);
+      const translated = await translateContent(scenes, langCode, data?.niche || 'general');
       setData(prev => ({
         ...prev,
         script: { ...prev.script, scenes: JSON.parse(translated) }
@@ -55,7 +55,7 @@ export default function ScriptTab() {
     try {
       addToast('info', 'Acoustic forging initiated...');
       const fullText = scenes.map(s => s.dialogue).join(' ');
-      const audioUrl = await generateAudio(fullText);
+      const audioUrl = await generateSpeech(fullText);
       setData(prev => ({
         ...prev,
         script: { ...prev.script, audioUrl }

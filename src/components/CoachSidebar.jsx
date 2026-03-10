@@ -9,7 +9,7 @@ import { useCreator } from '../context/CreatorContext.jsx';
 import './CoachSidebar.css';
 
 export default function CoachSidebar({ isOpen, onClose }) {
-  const { data, loading } = useCreator();
+  const { data, loading, analyzeCoachFeedback } = useCreator();
 
   return (
     <AnimatePresence>
@@ -92,9 +92,14 @@ export default function CoachSidebar({ isOpen, onClose }) {
 
             {/* Footer */}
             <div style={{ padding: 40, borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-tertiary)30' }}>
-               <button className="btn-primary" style={{ width: '100%', padding: '16px' }}>
-                  <RefreshCw size={16} />
-                  <span>Execute Full Workspace Audit</span>
+               <button 
+                  className="btn-primary" 
+                  onClick={analyzeCoachFeedback}
+                  disabled={loading || !data}
+                  style={{ width: '100%', padding: '16px', gap: 12 }}
+               >
+                  {loading ? <RefreshCw className="animate-spin" size={16} /> : <RefreshCw size={16} />}
+                  <span>{loading ? 'Analyzing Workspace...' : 'Execute Full Workspace Audit'}</span>
                </button>
             </div>
           </motion.div>

@@ -341,17 +341,40 @@ export function CreatorProvider({ children }) {
       const dnaSnippet = data?.genome?.dna_snippet;
       const result = await analyzeContentQuality(topic, data, dnaSnippet);
       setCoachFeedback(result);
+      if (user) {
+        const teamId = activeWorkspace !== 'personal' ? activeWorkspace : null;
+        dbService.logActivity(user.id, 'audit', `Executed strategic audit for "${topic}"`, teamId, currentProjectId);
+      }
     } catch (err) {
       console.error('Coach analysis failed:', err);
     } finally {
       setLoading(false);
     }
-  }, [topic, data]);
+  }, [topic, data, user, activeWorkspace, currentProjectId]);
+
+  const optimizeWorkflows = useCallback(async () => {
+    if (!topic || !data) return;
+    setLoading(true);
+    try {
+      const { analyzeProductionBottlenecks } = await import('../engine/aiService.js');
+      const result = await analyzeProductionBottlenecks(topic, data);
+      // We could add a specific state for optimization or just update the data
+      setData(prev => ({ ...prev, automation: { ...prev.automation, optimization: result } }));
+      if (user) {
+        const teamId = activeWorkspace !== 'personal' ? activeWorkspace : null;
+        dbService.logActivity(user.id, 'optimization', `Optimized production workflows for "${topic}"`, teamId, currentProjectId);
+      }
+    } catch (err) {
+       console.error('Optimization failed:', err);
+    } finally {
+       setLoading(false);
+    }
+  }, [topic, data, user, activeWorkspace, currentProjectId]);
 
   const value = {
     topic, setTopic, tone, setTone, data, setData, loading, activeTab, setActiveTab,
     calendar, setCalendar, pulse, setPulse, workload, setWorkload, coachFeedback, 
-    analyzeCoachFeedback, generatePulse, analyzeWorkloadData,
+    analyzeCoachFeedback, generatePulse, analyzeWorkloadData, optimizeWorkflows,
     batchMode, setBatchMode, batchQueue, setBatchQueue, addToBatch, removeFromBatch, processBatch, clearBatch,
     generate, regenerateSection, resetSession, provider, setProvider, backendReady, currentProjectId,
     saveCurrentProject, loadProject, currentAudio, setCurrentAudio, activeWorkspace, setActiveWorkspace,

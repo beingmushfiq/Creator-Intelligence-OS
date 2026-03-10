@@ -25,7 +25,7 @@ const GENERATION_MODES = [
 ];
 
 export default function TopicInput() {
-  const { topic, setTopic, data, generateTopicIdeas, loading } = useCreator();
+  const { topic, setTopic, data, generate, loading } = useCreator();
   const { addToast } = useToast();
   const [inputValue, setInputValue] = useState(topic || '');
   const [isFocused, setIsFocused] = useState(false);
@@ -35,9 +35,8 @@ export default function TopicInput() {
       addToast('error', 'Topic node required for synthesis.');
       return;
     }
-    setTopic(inputValue);
     try {
-      await generateTopicIdeas(inputValue);
+      await generate(inputValue);
       addToast('success', 'Workspace synchronized with intelligence.');
     } catch (e) {
       addToast('error', 'Synthesis failed.');
